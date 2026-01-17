@@ -286,11 +286,12 @@ export default function OrderDetailsScreen() {
                                 key={p.id}
                                 title={`$${p.amount.toFixed(2)}`}
                                 titleStyle={{ fontWeight: 'bold' }}
-                                description={`${p.paymentMethod.replace('_', ' ')} | ${new Date(p.date || '').toLocaleDateString()}`}
+                                description={`${(p.paymentMethod || 'cash').replace('_', ' ')} | ${new Date(p.date || '').toLocaleDateString()}`}
                                 left={(props) => {
                                     let icon = Wallet01Icon;
-                                    if (p.paymentMethod === 'bank_transfer') icon = Invoice01Icon;
-                                    if (p.paymentMethod === 'card') icon = CreditCardIcon;
+                                    const method = p.paymentMethod || 'cash';
+                                    if (method === 'bank_transfer') icon = Invoice01Icon;
+                                    if (method === 'card') icon = CreditCardIcon;
                                     return <List.Icon {...props} icon={() => <HugeiconsIcon icon={icon} size={24} color={theme.colors.primary} />} />;
                                 }}
                                 style={{ paddingHorizontal: 0 }}
