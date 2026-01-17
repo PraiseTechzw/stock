@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         paddingHorizontal: 20,
         borderRadius: 20,
-        backdropFilter: 'blur(10px)',
     },
     overlay: {
         flex: 1,

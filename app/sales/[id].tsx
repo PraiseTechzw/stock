@@ -286,7 +286,7 @@ export default function OrderDetailsScreen() {
                                 key={p.id}
                                 title={`$${p.amount.toFixed(2)}`}
                                 titleStyle={{ fontWeight: 'bold' }}
-                                description={`${p.paymentMethod.replace('_', ' ')} | ${new Date(p.date || '').toLocaleDateString()}`}
+                                description={`${(p.paymentMethod || 'cash').replace('_', ' ')} | ${new Date(p.date || '').toLocaleDateString()}`}
                                 left={(props) => {
                                     let icon = Wallet01Icon;
                                     if (p.paymentMethod === 'bank_transfer') icon = Invoice01Icon;
