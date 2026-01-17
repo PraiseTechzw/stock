@@ -3,10 +3,19 @@ import { ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { toastConfig } from '@/src/components/ui/ToastConfig';
+import { DatabaseProvider } from '@/src/db/DatabaseProvider';
+import { useAuth } from '@/src/hooks/useAuth';
+import { usePushNotifications } from '@/src/hooks/usePushNotifications';
+import { useSettingsStore } from '@/src/store/useSettingsStore';
+import { AppDarkTheme, AppLightTheme, NavDarkTheme, NavLightTheme } from '@/src/theme/AppTheme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -45,15 +54,6 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-import { toastConfig } from '@/src/components/ui/ToastConfig';
-import { DatabaseProvider } from '@/src/db/DatabaseProvider';
-import { useAuth } from '@/src/hooks/useAuth';
-import { useSettingsStore } from '@/src/store/useSettingsStore';
-import { AppDarkTheme, AppLightTheme, NavDarkTheme, NavLightTheme } from '@/src/theme/AppTheme';
-import { StatusBar } from 'expo-status-bar';
-import { PaperProvider } from 'react-native-paper';
-import Toast from 'react-native-toast-message';
-
 function AuthProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const segments = useSegments();
@@ -73,8 +73,6 @@ function AuthProtectedRoute({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-import { usePushNotifications } from '@/src/hooks/usePushNotifications';
 
 function RootLayoutNav() {
   const systemColorScheme = useColorScheme();

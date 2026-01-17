@@ -1,4 +1,6 @@
 import { useCustomers } from '@/src/hooks/useCustomers';
+import { UserIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Stack, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';

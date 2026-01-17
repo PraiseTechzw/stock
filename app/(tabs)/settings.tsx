@@ -8,6 +8,7 @@ import {
     File01Icon,
     Logout01Icon,
     Moon01Icon,
+    Notification03Icon,
     Shield01Icon,
     Sun01Icon,
     UserGroupIcon
@@ -16,12 +17,12 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Avatar, Divider, List, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Avatar, Divider, List, Switch, Text, useTheme } from 'react-native-paper';
 
 export default function SettingsScreen() {
     const { user, logout } = useAuth();
     const { exportProducts, exportSales } = useExport();
-    const { themeMode, setThemeMode } = useSettingsStore();
+    const { themeMode, setThemeMode, notificationsEnabled, setNotificationsEnabled } = useSettingsStore();
     const router = useRouter();
     const theme = useTheme();
     const [exporting, setExporting] = useState(false);
@@ -80,6 +81,22 @@ export default function SettingsScreen() {
                         left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Moon01Icon} size={24} color={themeMode === 'dark' ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
                         right={(props) => themeMode === 'dark' ? <List.Icon {...props} icon="check" color={theme.colors.primary} /> : null}
                         onPress={() => setThemeMode('dark')}
+                    />
+                </List.Section>
+
+                <SectionHeader title="Notification Settings" />
+                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                    <List.Item
+                        title="Push Notifications"
+                        description="Receive alerts for low stock and updates"
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Notification03Icon} size={24} color={notificationsEnabled ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
+                        right={() => (
+                            <Switch
+                                value={notificationsEnabled}
+                                onValueChange={setNotificationsEnabled}
+                                color={theme.colors.primary}
+                            />
+                        )}
                     />
                 </List.Section>
 

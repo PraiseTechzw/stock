@@ -1,4 +1,6 @@
 import { useExpenses } from '@/src/hooks/useExpenses';
+import { Camera01Icon, Delete02Icon, Image01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
