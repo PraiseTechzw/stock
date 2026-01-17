@@ -74,9 +74,13 @@ function AuthProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { usePushNotifications } from '@/src/hooks/usePushNotifications';
+
 function RootLayoutNav() {
   const systemColorScheme = useColorScheme();
   const { themeMode } = useSettingsStore();
+
+  usePushNotifications();
 
   const isDark = themeMode === 'system'
     ? systemColorScheme === 'dark'
