@@ -1,3 +1,4 @@
+import { PushTokenDisplay } from '@/src/components/ui/PushTokenDisplay';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useExport } from '@/src/hooks/useExport';
@@ -99,6 +100,8 @@ export default function SettingsScreen() {
                         )}
                     />
                 </List.Section>
+
+                <PushTokenDisplay />
 
                 <SectionHeader title="Account Security" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>

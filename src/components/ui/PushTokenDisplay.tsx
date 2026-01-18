@@ -1,9 +1,8 @@
 import { usePushNotifications } from '@/src/hooks/usePushNotifications';
-import { Clipboard01Icon } from '@hugeicons/core-free-icons';
+import { ClipboardIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import * as Clipboard from 'expo-clipboard';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Clipboard, StyleSheet } from 'react-native';
 import { Button, Card, Text, useTheme } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
@@ -13,7 +12,7 @@ export function PushTokenDisplay() {
 
     const copyToClipboard = async () => {
         if (expoPushToken) {
-            await Clipboard.setStringAsync(expoPushToken);
+            Clipboard.setString(expoPushToken);
             Toast.show({
                 type: 'success',
                 text1: 'Token Copied!',
@@ -47,7 +46,7 @@ export function PushTokenDisplay() {
                 <Button
                     mode="contained-tonal"
                     onPress={copyToClipboard}
-                    icon={() => <HugeiconsIcon icon={Clipboard01Icon} size={18} color={theme.colors.primary} />}
+                    icon={() => <HugeiconsIcon icon={ClipboardIcon} size={18} color={theme.colors.primary} />}
                     style={{ alignSelf: 'flex-start' }}
                 >
                     Copy Token

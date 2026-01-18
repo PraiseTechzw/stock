@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { db } from '../db/DatabaseProvider';
 import { products, salesOrders } from '../db/schema';
@@ -19,9 +19,9 @@ export const useExport = () => {
         try {
             const productList = await db.select().from(products);
             const csvContent = convertToCSV(productList);
-            const fileUri = `${(FileSystem as any).documentDirectory}inventory_export_${Date.now()}.csv`;
+            const fileUri = `${documentDirectory}inventory_export_${Date.now()}.csv`;
 
-            await FileSystem.writeAsStringAsync(fileUri, csvContent);
+            await writeAsStringAsync(fileUri, csvContent);
             await Sharing.shareAsync(fileUri);
             return true;
         } catch (error) {
@@ -34,9 +34,9 @@ export const useExport = () => {
         try {
             const salesList = await db.select().from(salesOrders);
             const csvContent = convertToCSV(salesList);
-            const fileUri = `${(FileSystem as any).documentDirectory}sales_export_${Date.now()}.csv`;
+            const fileUri = `${documentDirectory}sales_export_${Date.now()}.csv`;
 
-            await FileSystem.writeAsStringAsync(fileUri, csvContent);
+            await writeAsStringAsync(fileUri, csvContent);
             await Sharing.shareAsync(fileUri);
             return true;
         } catch (error) {
