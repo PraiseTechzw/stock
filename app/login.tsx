@@ -210,6 +210,9 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         paddingVertical: 12,
     },
+    cardContainer: {
+        width: '100%',
+    },
     loginTitle: {
         marginBottom: 24,
         fontWeight: 'bold',
