@@ -17,8 +17,8 @@ import * as Print from 'expo-print';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Dialog, IconButton, List, Portal, RadioButton, Surface, Text, TextInput, Title, useTheme } from 'react-native-paper';
+import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Card, Dialog, IconButton, List, Portal, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
 export default function OrderDetailsScreen() {
@@ -224,7 +224,7 @@ export default function OrderDetailsScreen() {
                 <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderRadius: 24 }]}>
                     <Card.Content>
                         <View style={styles.cardHeader}>
-                            <Title style={{ fontWeight: 'bold' }}>Customer</Title>
+                            <Text style={styles.sectionTitle}>Customer</Text>
                             <IconButton
                                 icon={() => <HugeiconsIcon icon={UserEdit01Icon} size={24} color={theme.colors.primary} />}
                                 onPress={() => router.push(`/customers/${order.customerId}`)}
@@ -247,20 +247,27 @@ export default function OrderDetailsScreen() {
                 <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderRadius: 24 }]}>
                     <Card.Content>
                         <View style={styles.cardHeader}>
-                            <Title style={{ fontWeight: 'bold' }}>Items (${order.totalAmount?.toFixed(2)})</Title>
+                            <Text style={styles.sectionTitle}>Items (${order.totalAmount?.toFixed(2)})</Text>
                         </View>
                         {items?.map((item) => {
                             const product = products.find(p => p.id === item.productId);
                             return (
-                                <List.Item
-                                    key={item.id}
-                                    title={product?.name}
-                                    titleStyle={{ fontWeight: 'bold' }}
-                                    description={`${item.quantity} x $${item.price.toFixed(2)}`}
-                                    left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={PackageIcon} size={24} color={theme.colors.primary} />} />}
-                                    right={() => <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>${(item.price * item.quantity).toFixed(2)}</Text>}
-                                    style={{ paddingHorizontal: 0 }}
-                                />
+                                <View key={item.id} style={styles.orderItemRow}>
+                                    <View style={styles.itemImageContainer}>
+                                        {product?.imageUri ? (
+                                            <Image source={{ uri: product.imageUri }} style={styles.itemImage} />
+                                        ) : (
+                                            <Surface style={styles.itemIconPlaceholder} elevation={0}>
+                                                <HugeiconsIcon icon={PackageIcon} size={18} color="#94a3b8" />
+                                            </Surface>
+                                        )}
+                                    </View>
+                                    <View style={styles.itemMainInfo}>
+                                        <Text style={styles.itemName}>{product?.name}</Text>
+                                        <Text style={styles.itemSubtext}>{item.quantity} units x ${item.price.toFixed(2)}</Text>
+                                    </View>
+                                    <Text style={styles.itemTotalPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+                                </View>
                             );
                         })}
                     </Card.Content>
@@ -269,7 +276,7 @@ export default function OrderDetailsScreen() {
                 <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderRadius: 24 }]}>
                     <Card.Content>
                         <View style={styles.cardHeader}>
-                            <Title style={{ fontWeight: 'bold' }}>Payments</Title>
+                            <Text style={styles.sectionTitle}>Payments</Text>
                             {balance > 0 && (
                                 <Button
                                     mode="contained-tonal"
@@ -343,18 +350,26 @@ export default function OrderDetailsScreen() {
                                 activeOutlineColor={theme.colors.primary}
                                 left={<TextInput.Affix text="$" />}
                             />
-                            <Text variant="labelLarge" style={{ marginBottom: 12, fontWeight: 'bold', color: theme.colors.onSurfaceVariant }}>METHOD</Text>
-                            <RadioButton.Group onValueChange={value => setPaymentMethod(value)} value={paymentMethod}>
-                                {['cash', 'bank_transfer', 'card'].map(m => (
-                                    <List.Item
-                                        key={m}
-                                        title={m.replace('_', ' ').toUpperCase()}
-                                        onPress={() => setPaymentMethod(m)}
-                                        left={props => <RadioButton value={m} />}
-                                        style={{ paddingVertical: 4 }}
-                                    />
+                            <Text variant="labelLarge" style={styles.dialogLabel}>PAYMENT METHOD</Text>
+                            <View style={styles.dialogMethodGrid}>
+                                {[
+                                    { id: 'cash', label: 'Cash', icon: Wallet01Icon },
+                                    { id: 'bank_transfer', label: 'Bank', icon: Invoice01Icon },
+                                    { id: 'card', label: 'Card', icon: CreditCardIcon }
+                                ].map(m => (
+                                    <TouchableOpacity
+                                        key={m.id}
+                                        style={[
+                                            styles.dialogMethodChip,
+                                            paymentMethod === m.id && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }
+                                        ]}
+                                        onPress={() => setPaymentMethod(m.id)}
+                                    >
+                                        <HugeiconsIcon icon={m.icon} size={18} color={paymentMethod === m.id ? '#fff' : '#64748b'} />
+                                        <Text style={[styles.dialogMethodText, paymentMethod === m.id && { color: '#fff' }]}>{m.label}</Text>
+                                    </TouchableOpacity>
                                 ))}
-                            </RadioButton.Group>
+                            </View>
                         </Dialog.Content>
                         <Dialog.Actions style={{ padding: 16 }}>
                             <Button onPress={() => setPaymentVisible(false)} style={{ marginRight: 8 }}>Cancel</Button>
@@ -397,7 +412,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontWeight: '900',
+        fontSize: 18,
+        color: '#1e293b',
     },
     customerBox: {
         flexDirection: 'row',
@@ -410,6 +430,47 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    orderItemRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+    },
+    itemImageContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginRight: 12,
+    },
+    itemImage: {
+        width: '100%',
+        height: '100%',
+    },
+    itemIconPlaceholder: {
+        flex: 1,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    itemMainInfo: {
+        flex: 1,
+    },
+    itemName: {
+        fontWeight: '700',
+        color: '#1e293b',
+        fontSize: 14,
+    },
+    itemSubtext: {
+        color: '#64748b',
+        fontSize: 12,
+    },
+    itemTotalPrice: {
+        fontWeight: '900',
+        color: '#1e293b',
+        fontSize: 15,
     },
     emptyBox: {
         padding: 20,
@@ -424,5 +485,32 @@ const styles = StyleSheet.create({
     actionBtn: {
         flex: 1,
         borderRadius: 16,
+    },
+    dialogLabel: {
+        fontWeight: '900',
+        fontSize: 11,
+        letterSpacing: 1.2,
+        color: '#94a3b8',
+        marginBottom: 12,
+    },
+    dialogMethodGrid: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    dialogMethodChip: {
+        flex: 1,
+        height: 44,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#e2e8f0',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    dialogMethodText: {
+        fontWeight: '700',
+        fontSize: 12,
+        color: '#64748b',
     },
 });

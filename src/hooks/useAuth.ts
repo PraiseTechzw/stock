@@ -14,6 +14,8 @@ export interface User {
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
+    _hasHydrated: boolean;
+    setHasHydrated: (state: boolean) => void;
     login: (user: User) => void;
     logout: () => void;
     hasPermission: (permission: string) => boolean;
@@ -24,6 +26,8 @@ export const useAuth = create<AuthState>()(
         (set, get) => ({
             user: null,
             isAuthenticated: false,
+            _hasHydrated: false,
+            setHasHydrated: (state) => set({ _hasHydrated: state }),
             login: (user) => set({ user, isAuthenticated: true }),
             logout: () => set({ user: null, isAuthenticated: false }),
             hasPermission: (permission) => {
@@ -56,6 +60,9 @@ export const useAuth = create<AuthState>()(
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => AsyncStorage),
+            onRehydrateStorage: (state) => {
+                return () => state.setHasHydrated(true);
+            },
         }
     )
 );

@@ -1,9 +1,11 @@
 import { useProducts } from '@/src/hooks/useProducts';
 import { useStock } from '@/src/hooks/useStock';
+import { PackageIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, List, SegmentedButtons, Text, TextInput, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
 export default function StockManagementScreen() {
@@ -39,8 +41,6 @@ export default function StockManagementScreen() {
                 type: 'success',
                 text1: 'Stock Adjusted',
                 text2: `Successfully updated ${product?.name} stock.`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             router.back();
@@ -50,8 +50,6 @@ export default function StockManagementScreen() {
                 type: 'error',
                 text1: 'Error',
                 text2: 'Could not adjust stock level.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
@@ -70,8 +68,6 @@ export default function StockManagementScreen() {
                 type: 'success',
                 text1: 'Transfer Complete',
                 text2: `Moved ${form.quantity} units of ${product?.name}.`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             router.back();
@@ -81,8 +77,6 @@ export default function StockManagementScreen() {
                 type: 'error',
                 text1: 'Transfer Failed',
                 text2: 'Could not complete stock transfer.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
@@ -91,145 +85,162 @@ export default function StockManagementScreen() {
 
     return (
         <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: `Manage Stock` }} />
+            <Stack.Screen options={{ title: `Stock Control` }} />
 
             <View style={styles.content}>
                 <View style={styles.header}>
-                    <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{product.name}</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>SKU: {product.sku}</Text>
+                    <Text variant="headlineSmall" style={styles.productTitle}>{product.name}</Text>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>Real-time stock management</Text>
                 </View>
 
-                <Card style={[styles.card, { backgroundColor: theme.colors.primary, borderRadius: 24 }]}>
-                    <Card.Content style={{ padding: 20 }}>
-                        <Text variant="titleMedium" style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'bold', marginBottom: 16 }}>Current Stock Levels</Text>
-                        <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 8 }}>
-                            {stockLevels?.map((level) => {
-                                const loc = locations.find(l => l.id === level.locationId);
-                                return (
-                                    <List.Item
-                                        key={level.id}
-                                        title={loc?.name || 'Unknown Location'}
-                                        titleStyle={{ color: '#fff', fontWeight: 'bold' }}
-                                        right={() => <Text variant="titleLarge" style={{ color: '#fff', fontWeight: '900' }}>{level.quantity}</Text>}
-                                    />
-                                );
-                            })}
-                            {stockLevels?.length === 0 && (
-                                <View style={{ padding: 20, alignItems: 'center' }}>
-                                    <Text style={{ color: '#fff', opacity: 0.7 }}>No stock recorded in any location</Text>
+                <Surface style={styles.stockSummary} elevation={2}>
+                    <View style={styles.summaryHeader}>
+                        <HugeiconsIcon icon={PackageIcon} size={20} color="#fff" />
+                        <Text variant="titleSmall" style={{ color: '#fff', marginLeft: 8, fontWeight: '900' }}>TOTAL UNITS ON HAND</Text>
+                    </View>
+                    <View style={styles.summaryBody}>
+                        {stockLevels?.map((level) => {
+                            const loc = locations.find(l => l.id === level.locationId);
+                            return (
+                                <View key={level.id} style={styles.summaryRow}>
+                                    <Text style={styles.locationLabel}>{loc?.name || 'Store'}</Text>
+                                    <Text style={styles.quantityText}>{level.quantity} units</Text>
                                 </View>
-                            )}
-                        </View>
-                    </Card.Content>
-                </Card>
+                            );
+                        })}
+                        {(!stockLevels || stockLevels.length === 0) && (
+                            <Text style={{ color: '#fff', opacity: 0.6, textAlign: 'center' }}>No current stock recorded</Text>
+                        )}
+                    </View>
+                </Surface>
 
                 <SegmentedButtons
                     value={mode}
                     onValueChange={setMode}
                     buttons={[
-                        { value: 'adjust', label: 'Adjust' },
-                        { value: 'transfer', label: 'Transfer' },
+                        { value: 'adjust', label: 'Restock / Adjust', icon: 'plus-minus' },
+                        { value: 'transfer', label: 'Move Stock', icon: 'swap-horizontal' },
                     ]}
                     style={styles.segmented}
                 />
 
-                {mode === 'adjust' ? (
-                    <View style={styles.form}>
-                        <Text variant="labelLarge" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>SELECT LOCATION</Text>
-                        <View style={styles.locationList}>
-                            {locations.map((loc) => (
-                                <Button
-                                    key={loc.id}
-                                    mode={form.locationId === loc.id.toString() ? 'contained' : 'outlined'}
-                                    onPress={() => setForm({ ...form, locationId: loc.id.toString() })}
-                                    style={styles.locationButton}
-                                    labelStyle={{ fontSize: 12 }}
-                                    compact
-                                >
-                                    {loc.name}
-                                </Button>
-                            ))}
-                        </View>
+                <Surface style={styles.formCard} elevation={1}>
+                    {mode === 'adjust' ? (
+                        <>
+                            <Text variant="labelLarge" style={styles.inputLabel}>CHOOSE STORAGE LOCATION</Text>
+                            <View style={styles.chipRow}>
+                                {locations.map((loc) => (
+                                    <TouchableOpacity
+                                        key={loc.id}
+                                        onPress={() => setForm({ ...form, locationId: loc.id.toString() })}
+                                        style={[
+                                            styles.locationChip,
+                                            form.locationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                        ]}
+                                    >
+                                        <Text style={[
+                                            styles.chipText,
+                                            form.locationId === loc.id.toString() && { color: '#fff' }
+                                        ]}>{loc.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
 
-                        <TextInput
-                            label="Quantity (+ to add, - to remove)"
-                            mode="outlined"
-                            value={form.quantity}
-                            onChangeText={(text) => setForm({ ...form, quantity: text })}
-                            keyboardType="numeric"
-                            style={styles.input}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <TextInput
-                            label="Reason (e.g. Damage, Restock)"
-                            mode="outlined"
-                            value={form.reason}
-                            onChangeText={(text) => setForm({ ...form, reason: text })}
-                            style={styles.input}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <Button
-                            mode="contained"
-                            onPress={handleAdjust}
-                            style={styles.actionButton}
-                            contentStyle={styles.buttonContent}
-                        >
-                            Confirm Adjustment
-                        </Button>
-                    </View>
-                ) : (
-                    <View style={styles.form}>
-                        <Text variant="labelLarge" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>FROM LOCATION</Text>
-                        <View style={styles.locationList}>
-                            {locations.map((loc) => (
-                                <Button
-                                    key={loc.id}
-                                    mode={form.fromLocationId === loc.id.toString() ? 'contained' : 'outlined'}
-                                    onPress={() => setForm({ ...form, fromLocationId: loc.id.toString() })}
-                                    style={styles.locationButton}
-                                    labelStyle={{ fontSize: 12 }}
-                                    compact
-                                >
-                                    {loc.name}
-                                </Button>
-                            ))}
-                        </View>
+                            <TextInput
+                                label="Quantity (+ add, - remove)"
+                                mode="outlined"
+                                placeholder="0"
+                                value={form.quantity}
+                                onChangeText={(text) => setForm({ ...form, quantity: text })}
+                                keyboardType="numeric"
+                                style={styles.premiumInput}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor="#6366f1"
+                                left={<TextInput.Icon icon="plus-thick" color="#6366f1" />}
+                            />
 
-                        <Text variant="labelLarge" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>TO LOCATION</Text>
-                        <View style={styles.locationList}>
-                            {locations.map((loc) => (
-                                <Button
-                                    key={loc.id}
-                                    mode={form.toLocationId === loc.id.toString() ? 'contained' : 'outlined'}
-                                    onPress={() => setForm({ ...form, toLocationId: loc.id.toString() })}
-                                    style={styles.locationButton}
-                                    labelStyle={{ fontSize: 12 }}
-                                    compact
-                                >
-                                    {loc.name}
-                                </Button>
-                            ))}
-                        </View>
+                            <TextInput
+                                label="Reason / Note"
+                                mode="outlined"
+                                placeholder="e.g., Restock from supplier"
+                                value={form.reason}
+                                onChangeText={(text) => setForm({ ...form, reason: text })}
+                                style={styles.premiumInput}
+                                outlineStyle={{ borderRadius: 16 }}
+                            />
 
-                        <TextInput
-                            label="Quantity to Transfer"
-                            mode="outlined"
-                            value={form.quantity}
-                            onChangeText={(text) => setForm({ ...form, quantity: text })}
-                            keyboardType="numeric"
-                            style={styles.input}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <Button
-                            mode="contained"
-                            onPress={handleTransfer}
-                            style={styles.actionButton}
-                            contentStyle={styles.buttonContent}
-                        >
-                            Transfer Stock
-                        </Button>
-                    </View>
-                )}
+                            <Button
+                                mode="contained"
+                                onPress={handleAdjust}
+                                style={styles.submitBtn}
+                                contentStyle={{ height: 56 }}
+                                labelStyle={{ fontWeight: '900' }}
+                            >
+                                SAVE UNIT UPDATE
+                            </Button>
+                        </>
+                    ) : (
+                        <View style={styles.form}>
+                            <Text variant="labelLarge" style={styles.inputLabel}>FROM LOCATION</Text>
+                            <View style={styles.chipRow}>
+                                {locations.map((loc) => (
+                                    <TouchableOpacity
+                                        key={loc.id}
+                                        onPress={() => setForm({ ...form, fromLocationId: loc.id.toString() })}
+                                        style={[
+                                            styles.locationChip,
+                                            form.fromLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                        ]}
+                                    >
+                                        <Text style={[
+                                            styles.chipText,
+                                            form.fromLocationId === loc.id.toString() && { color: '#fff' }
+                                        ]}>{loc.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text variant="labelLarge" style={styles.inputLabel}>TO LOCATION</Text>
+                            <View style={styles.chipRow}>
+                                {locations.map((loc) => (
+                                    <TouchableOpacity
+                                        key={loc.id}
+                                        onPress={() => setForm({ ...form, toLocationId: loc.id.toString() })}
+                                        style={[
+                                            styles.locationChip,
+                                            form.toLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                        ]}
+                                    >
+                                        <Text style={[
+                                            styles.chipText,
+                                            form.toLocationId === loc.id.toString() && { color: '#fff' }
+                                        ]}>{loc.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <TextInput
+                                label="How many units?"
+                                mode="outlined"
+                                value={form.quantity}
+                                onChangeText={(text) => setForm({ ...form, quantity: text })}
+                                keyboardType="numeric"
+                                style={styles.premiumInput}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor="#6366f1"
+                            />
+                            <Button
+                                mode="contained"
+                                onPress={handleTransfer}
+                                style={styles.submitBtn}
+                                contentStyle={{ height: 56 }}
+                                labelStyle={{ fontWeight: '900' }}
+                            >
+                                MOVE UNITS
+                            </Button>
+                        </View>
+                    )}
+                </Surface>
             </View>
         </ScrollView>
     );
@@ -246,45 +257,84 @@ const styles = StyleSheet.create({
     header: {
         marginBottom: 24,
     },
-    card: {
+    productTitle: {
+        fontWeight: '900',
+        color: '#1e293b',
+        letterSpacing: -0.5,
+    },
+    stockSummary: {
         marginBottom: 32,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
+        borderRadius: 24,
+        backgroundColor: '#6366f1',
+        overflow: 'hidden',
+    },
+    summaryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        padding: 16,
+    },
+    summaryBody: {
+        padding: 20,
+    },
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    locationLabel: {
+        color: 'rgba(255,255,255,0.8)',
+        fontWeight: '600',
+    },
+    quantityText: {
+        color: '#fff',
+        fontWeight: '900',
+        fontSize: 16,
     },
     segmented: {
         marginBottom: 24,
     },
-    form: {
-        gap: 8,
+    formCard: {
+        padding: 20,
+        borderRadius: 24,
+        backgroundColor: '#fff',
     },
-    label: {
-        marginBottom: 12,
+    inputLabel: {
+        color: '#94a3b8',
         fontWeight: '900',
         letterSpacing: 1,
         fontSize: 10,
+        marginBottom: 12,
+        marginTop: 8,
     },
-    locationList: {
+    chipRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 20,
         gap: 8,
+        marginBottom: 20,
     },
-    locationButton: {
-        borderRadius: 10,
+    locationChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#e2e8f0',
     },
-    input: {
+    chipText: {
+        fontWeight: '700',
+        fontSize: 13,
+        color: '#64748b',
+    },
+    premiumInput: {
         marginBottom: 16,
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
     },
-    actionButton: {
-        marginTop: 12,
+    submitBtn: {
+        marginTop: 8,
         borderRadius: 16,
-        elevation: 4,
+        backgroundColor: '#6366f1',
     },
-    buttonContent: {
-        height: 56,
+    form: {
+        gap: 4,
     },
 });

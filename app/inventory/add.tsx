@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, IconButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, HelperText, IconButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
 export default function AddProductScreen() {
@@ -23,6 +23,8 @@ export default function AddProductScreen() {
         sellingPrice: '',
         barcode: '',
         imageUri: '',
+        categoryId: '',
+        minStockLevel: '5', // Default alert at 5 units
     });
 
     const pickImage = async () => {
@@ -65,6 +67,8 @@ export default function AddProductScreen() {
                 sellingPrice: parseFloat(form.sellingPrice) || 0,
                 barcode: form.barcode,
                 imageUri: form.imageUri,
+                categoryId: parseInt(form.categoryId) || null,
+                minStockLevel: parseInt(form.minStockLevel) || 0,
                 isActive: true,
             });
 
@@ -177,6 +181,21 @@ export default function AddProductScreen() {
                         style={[styles.input, { flex: 1 }]}
                         activeOutlineColor={theme.colors.primary}
                     />
+                </View>
+
+                <View>
+                    <TextInput
+                        label="Low Stock Alert Level (Units)"
+                        mode="outlined"
+                        value={form.minStockLevel}
+                        onChangeText={(text) => setForm({ ...form, minStockLevel: text })}
+                        keyboardType="numeric"
+                        style={styles.input}
+                        activeOutlineColor={theme.colors.primary}
+                    />
+                    <HelperText type="info" visible={true} style={{ marginTop: -8, marginBottom: 8 }}>
+                        Notify me when stock falls below this number
+                    </HelperText>
                 </View>
 
                 <View style={styles.row}>

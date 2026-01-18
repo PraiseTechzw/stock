@@ -3,6 +3,8 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import { db } from '../db/DatabaseProvider';
+import { notifications as notificationsTable } from '../db/schema';
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -66,8 +68,21 @@ export function usePushNotifications() {
     useEffect(() => {
         registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
 
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
             setNotification(notification);
+
+            // Save to local DB for history
+            try {
+                await db.insert(notificationsTable).values({
+                    title: notification.request.content.title || 'Notification',
+                    body: notification.request.content.body || '',
+                    type: (notification.request.content.data?.type as string) || 'info',
+                    data: JSON.stringify(notification.request.content.data || {}),
+                    isRead: false,
+                }).returning();
+            } catch (error) {
+                console.error('Error saving notification to DB:', error);
+            }
         });
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {

@@ -1,3 +1,4 @@
+import { ShoppingBag01Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
 import { isAfter, parseISO, startOfDay, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
@@ -56,6 +57,11 @@ export const useReports = (filter: ReportFilter = 'all') => {
         const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
         const netProfit = grossProfit - totalExpenses;
 
+        // UNCOLLECTED DEBTS (Street Vendor specific)
+        const totalDebts = allSales
+            .filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial')
+            .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+
         // Accurate low stock count
         const lowStockCount = allProducts.filter(p => {
             if (!p.isActive) return false;
@@ -71,6 +77,7 @@ export const useReports = (filter: ReportFilter = 'all') => {
             grossProfit,
             totalExpenses,
             netProfit,
+            totalDebts,
             margin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
             totalProducts: allProducts.filter(p => p.isActive).length,
             lowStockCount,
@@ -102,9 +109,38 @@ export const useReports = (filter: ReportFilter = 'all') => {
         }));
     }, [allSalesItems, allProducts, allSales, filter]);
 
+    // Recent Activity Feed
+    const recentActivities = useMemo(() => {
+        if (!allSales || !allExpensesData) return [];
+
+        const activities: any[] = [
+            ...allSales.map(s => ({
+                id: `sale-${s.id}`,
+                type: 'sale',
+                title: 'New Sale',
+                subtitle: `$${s.totalAmount?.toFixed(2)}`,
+                date: s.created_at ? parseISO(s.created_at.replace(' ', 'T')) : new Date(),
+                icon: ShoppingBag01Icon,
+            })),
+            ...allExpensesData.map(e => ({
+                id: `expense-${e.id}`,
+                type: 'expense',
+                title: 'Expense Recorded',
+                subtitle: `${e.category}: -$${e.amount.toFixed(2)}`,
+                date: parseISO(e.date),
+                icon: Wallet01Icon,
+            }))
+        ];
+
+        return activities
+            .sort((a, b) => b.date.getTime() - a.date.getTime())
+            .slice(0, 5);
+    }, [allSales, allExpensesData]);
+
     return {
         metrics: financialMetrics,
         salesByCategory,
+        recentActivities,
         isLoading: !financialMetrics,
     };
 };

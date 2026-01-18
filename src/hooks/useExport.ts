@@ -1,4 +1,4 @@
-import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { db } from '../db/DatabaseProvider';
 import { products, salesOrders } from '../db/schema';
@@ -6,22 +6,35 @@ import { products, salesOrders } from '../db/schema';
 export const useExport = () => {
     const convertToCSV = (data: any[]) => {
         if (data.length === 0) return '';
-        const headers = Object.keys(data[0]).join(',');
+
+        const headers = Object.keys(data[0]);
+        const headerRow = headers.join(',');
+
         const rows = data.map(obj =>
-            Object.values(obj).map(val =>
-                typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-            ).join(',')
+            headers.map(header => {
+                const val = (obj as any)[header];
+                if (val === null || val === undefined) return '';
+                const stringVal = String(val);
+                // Escape quotes and wrap in quotes
+                return `"${stringVal.replace(/"/g, '""')}"`;
+            }).join(',')
         ).join('\n');
-        return `${headers}\n${rows}`;
+
+        return `${headerRow}\n${rows}`;
     };
 
     const exportProducts = async () => {
         try {
             const productList = await db.select().from(products);
             const csvContent = convertToCSV(productList);
-            const fileUri = `${documentDirectory}inventory_export_${Date.now()}.csv`;
 
-            await writeAsStringAsync(fileUri, csvContent);
+            // Using FileSystem constants directly from the namespace
+            const documentDir = FileSystem.documentDirectory;
+            if (!documentDir) throw new Error('Document directory not available');
+
+            const fileUri = `${documentDir}inventory_export_${Date.now()}.csv`;
+
+            await FileSystem.writeAsStringAsync(fileUri, csvContent);
             await Sharing.shareAsync(fileUri);
             return true;
         } catch (error) {
@@ -34,9 +47,13 @@ export const useExport = () => {
         try {
             const salesList = await db.select().from(salesOrders);
             const csvContent = convertToCSV(salesList);
-            const fileUri = `${documentDirectory}sales_export_${Date.now()}.csv`;
 
-            await writeAsStringAsync(fileUri, csvContent);
+            const documentDir = FileSystem.documentDirectory;
+            if (!documentDir) throw new Error('Document directory not available');
+
+            const fileUri = `${documentDir}sales_export_${Date.now()}.csv`;
+
+            await FileSystem.writeAsStringAsync(fileUri, csvContent);
             await Sharing.shareAsync(fileUri);
             return true;
         } catch (error) {

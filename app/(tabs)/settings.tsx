@@ -1,4 +1,3 @@
-import { PushTokenDisplay } from '@/src/components/ui/PushTokenDisplay';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useExport } from '@/src/hooks/useExport';
@@ -7,37 +6,60 @@ import {
     ComputerIcon,
     Database01Icon,
     File01Icon,
+    InformationCircleIcon,
     Logout01Icon,
     Moon01Icon,
     Notification03Icon,
+    Share01Icon,
     Shield01Icon,
+    Store01Icon,
     Sun01Icon,
-    UserGroupIcon
+    UserGroupIcon,
+    UserIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Avatar, Divider, List, Switch, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Avatar, Dialog, Divider, List, Button as PaperButton, TextInput as PaperTextInput, Portal, Switch, Text, useTheme } from 'react-native-paper';
 
 export default function SettingsScreen() {
     const { user, logout } = useAuth();
     const { exportProducts, exportSales } = useExport();
-    const { themeMode, setThemeMode, notificationsEnabled, setNotificationsEnabled } = useSettingsStore();
+    const { themeMode, setThemeMode, notificationsEnabled, setNotificationsEnabled, storeName, setStoreName, businessAddress, setBusinessAddress } = useSettingsStore();
     const router = useRouter();
     const theme = useTheme();
     const [exporting, setExporting] = useState(false);
+    const [editDialogVisible, setEditDialogVisible] = useState(false);
+    const [editType, setEditType] = useState<'name' | 'address' | null>(null);
+    const [editValue, setEditValue] = useState('');
 
     const handleExport = async (type: 'products' | 'sales') => {
         setExporting(true);
-        const success = type === 'products' ? await exportProducts() : await exportSales();
-        setExporting(false);
-
-        if (success) {
-            Alert.alert('Success', `${type === 'products' ? 'Inventory' : 'Sales'} data exported successfully.`);
-        } else {
-            Alert.alert('Error', 'Failed to export data.');
+        try {
+            const success = type === 'products' ? await exportProducts() : await exportSales();
+            if (success) {
+                Alert.alert('Success', `${type === 'products' ? 'Inventory' : 'Sales'} data exported successfully.`);
+            } else {
+                Alert.alert('Error', 'Failed to export data.');
+            }
+        } catch (e) {
+            Alert.alert('Error', 'An unexpected error occurred during export.');
+        } finally {
+            setExporting(false);
         }
+    };
+
+    const openEditDialog = (type: 'name' | 'address') => {
+        setEditType(type);
+        setEditValue(type === 'name' ? storeName : businessAddress);
+        setEditDialogVisible(true);
+    };
+
+    const saveEdit = () => {
+        if (editType === 'name') setStoreName(editValue);
+        else if (editType === 'address') setBusinessAddress(editValue);
+        setEditDialogVisible(false);
     };
 
     return (
@@ -85,6 +107,22 @@ export default function SettingsScreen() {
                     />
                 </List.Section>
 
+                <SectionHeader title="Business Identity" />
+                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                    <List.Item
+                        title="Store Name"
+                        description={storeName}
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Store01Icon} size={24} color={theme.colors.primary} />} />}
+                        onPress={() => openEditDialog('name')}
+                    />
+                    <List.Item
+                        title="Business Address"
+                        description={businessAddress}
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={InformationCircleIcon} size={24} color={theme.colors.primary} />} />}
+                        onPress={() => openEditDialog('address')}
+                    />
+                </List.Section>
+
                 <SectionHeader title="Notification Settings" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                     <List.Item
@@ -100,8 +138,6 @@ export default function SettingsScreen() {
                         )}
                     />
                 </List.Section>
-
-                <PushTokenDisplay />
 
                 <SectionHeader title="Account Security" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
@@ -151,9 +187,54 @@ export default function SettingsScreen() {
                 )}
 
                 <SectionHeader title="App Information" />
+                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                    <List.Item
+                        title="Developer & Creator"
+                        description="Praise Masunga (@PraiseTechzw)"
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={UserIcon} size={24} color={theme.colors.primary} />} />}
+                        onPress={() => Alert.alert(
+                            'About Developer',
+                            'Praise Masunga is a high-end Software Engineer specializing in React Native, Flutter, and AI solutions. \n\nFocus: Innovative, local-first inventory systems for SMEs.'
+                        )}
+                    />
+                    <List.Item
+                        title="Github Portfolio"
+                        description="github.com/PraiseTechzw"
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Share01Icon} size={24} color={theme.colors.primary} />} />}
+                        onPress={() => Alert.alert('Portfolio', 'Visit github.com/PraiseTechzw for more innovative projects.')}
+                    />
+                    <List.Item
+                        title="Build Version"
+                        description="1.0.0-Stable (Production Ready)"
+                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={ComputerIcon} size={24} color={theme.colors.onSurfaceVariant} />} />}
+                    />
+                </List.Section>
+
+                {user?.role === 'admin' && (
+                    <>
+                        <SectionHeader title="Danger Zone" />
+                        <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                            <List.Item
+                                title="Reset All Data"
+                                description="Permanently delete all stock and sales records"
+                                left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Database01Icon} size={24} color={theme.colors.error} />} />}
+                                onPress={() => Alert.alert(
+                                    'DANGER: Factory Reset',
+                                    'This will wipe ALL sales, customers, and inventory data. This cannot be undone.',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        { text: 'RESET EVERYTHING', style: 'destructive', onPress: () => Alert.alert('Simulated', 'Data reset would happen here.') }
+                                    ]
+                                )}
+                                titleStyle={{ color: theme.colors.error }}
+                            />
+                        </List.Section>
+                    </>
+                )}
+
                 <View style={styles.appInfo}>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>STOCK v1.0.0</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Local-First Architecture</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Local-First Architecture | Highly Secure</Text>
+                    <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary, fontWeight: 'bold' }}>Designed & Developed by Praise Masunga</Text>
                 </View>
             </ScrollView>
 
@@ -163,6 +244,25 @@ export default function SettingsScreen() {
                     <Text variant="bodyMedium" style={{ marginTop: 16, color: '#fff' }}>Generating CSV...</Text>
                 </View>
             )}
+
+            <Portal>
+                <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)} style={{ borderRadius: 24 }}>
+                    <Dialog.Title>Edit {editType === 'name' ? 'Store Name' : 'Business Address'}</Dialog.Title>
+                    <Dialog.Content>
+                        <PaperTextInput
+                            mode="outlined"
+                            value={editValue}
+                            onChangeText={setEditValue}
+                            placeholder={editType === 'name' ? "Enter store name" : "Enter business address"}
+                            autoFocus
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <PaperButton onPress={() => setEditDialogVisible(false)}>Cancel</PaperButton>
+                        <PaperButton onPress={saveEdit} mode="contained" style={{ borderRadius: 12 }}>Save</PaperButton>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </View>
     );
 }

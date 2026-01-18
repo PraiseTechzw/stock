@@ -12,6 +12,7 @@ import Toast from 'react-native-toast-message';
 import { useColorScheme } from '@/components/useColorScheme';
 import { toastConfig } from '@/src/components/ui/ToastConfig';
 import { DatabaseProvider } from '@/src/db/DatabaseProvider';
+import { useAppAutomation } from '@/src/hooks/useAppAutomation';
 import { useAuth } from '@/src/hooks/useAuth';
 import { usePushNotifications } from '@/src/hooks/usePushNotifications';
 import { useSettingsStore } from '@/src/store/useSettingsStore';
@@ -55,11 +56,12 @@ export default function RootLayout() {
 }
 
 function AuthProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, _hasHydrated } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     const inAuthGroup = segments[0] === 'login';
 
     if (!isAuthenticated && !inAuthGroup) {
@@ -79,6 +81,7 @@ function RootLayoutNav() {
   const { themeMode } = useSettingsStore();
 
   usePushNotifications();
+  useAppAutomation();
 
   const isDark = themeMode === 'system'
     ? systemColorScheme === 'dark'

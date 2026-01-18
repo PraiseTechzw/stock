@@ -31,6 +31,7 @@ export const products = sqliteTable('products', {
     maxStockLevel: integer('max_stock_level'),
     imageUri: text('image_uri'),
     isActive: integer('is_active', { mode: 'boolean' }).default(true),
+    isFavorite: integer('is_favorite', { mode: 'boolean' }).default(false),
 });
 
 export const stockLocations = sqliteTable('stock_locations', {
@@ -62,6 +63,7 @@ export const customers = sqliteTable('customers', {
     email: text('email'),
     phone: text('phone'),
     address: text('address'),
+    creditLimit: real('credit_limit').default(0),
 });
 
 export const salesOrders = sqliteTable('sales_orders', {
@@ -69,7 +71,9 @@ export const salesOrders = sqliteTable('sales_orders', {
     customerId: integer('customer_id').references(() => customers.id),
     totalAmount: real('total_amount').default(0),
     discountAmount: real('discount_amount').default(0),
-    status: text('status').default('draft'), // draft, confirmed, cancelled
+    status: text('status').default('confirmed'), // draft, confirmed, cancelled
+    paymentStatus: text('payment_status').default('paid'), // paid, partial, credit
+    dueDate: text('due_date'), // For IOU/Credit
 });
 
 export const salesOrderItems = sqliteTable('sales_order_items', {
@@ -85,7 +89,7 @@ export const salesOrderItems = sqliteTable('sales_order_items', {
 
 export const expenses = sqliteTable('expenses', {
     ...baseColumns,
-    category: text('category').notNull(), // Rent, Utilities, Marketing, etc.
+    category: text('category').notNull(), // Rent, Utilities, Marketing, Transport, Packaging, etc.
     amount: real('amount').notNull(),
     description: text('description'),
     date: text('date').notNull(),
@@ -106,7 +110,7 @@ export const payments = sqliteTable('payments', {
     ...baseColumns,
     salesOrderId: integer('sales_order_id').references(() => salesOrders.id),
     amount: real('amount').notNull(),
-    paymentMethod: text('payment_method').default('cash'), // cash, card, bank_transfer
+    paymentMethod: text('payment_method').default('cash'), // cash, eco_cash, zipit, usd_cash
     date: text('date').default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -114,4 +118,13 @@ export const settings = sqliteTable('settings', {
     key: text('key').primaryKey(),
     value: text('value'),
     updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const notifications = sqliteTable('notifications', {
+    ...baseColumns,
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    type: text('type').default('info'), // info, low_stock, debt, system
+    isRead: integer('is_read', { mode: 'boolean' }).default(false),
+    data: text('data'), // JSON string for additional metadata
 });

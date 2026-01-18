@@ -7,7 +7,7 @@ import migrations from '../../drizzle/migrations';
 import { stockLocations, users } from './schema';
 
 interface DatabaseContextType {
-    db: ExpoSQLiteDatabase | null;
+    db: ExpoSQLiteDatabase<typeof schema> | null;
     success: boolean;
     error?: Error;
 }
@@ -19,8 +19,10 @@ const DatabaseContext = createContext<DatabaseContextType>({
 
 export const useDatabase = () => useContext(DatabaseContext);
 
+import * as schema from './schema';
+
 const expoDb = openDatabaseSync('stock.db');
-export const db = drizzle(expoDb);
+export const db = drizzle(expoDb, { schema });
 
 export const DatabaseProvider = ({ children }: { children: React.ReactNode }) => {
     const { success, error } = useMigrations(db, migrations);

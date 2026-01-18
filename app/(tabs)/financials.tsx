@@ -209,6 +209,29 @@ export default function FinancialsScreen() {
 
                 <SectionHeader
                     title="Transaction History"
+                    actionLabel="Debts (IOUs)"
+                    onAction={() => { }} // Could link to a specific debt view
+                />
+
+                {/* Debts Summary Card */}
+                {metrics && (
+                    <Card style={[styles.card, { backgroundColor: theme.colors.errorContainer, marginBottom: 24, borderLeftWidth: 8, borderLeftColor: theme.colors.error }]}>
+                        <Card.Content>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View>
+                                    <Text variant="labelSmall" style={{ color: theme.colors.error }}>UNCOLLECTED DEBTS</Text>
+                                    <Text variant="titleLarge" style={{ fontWeight: '900', color: theme.colors.error }}>
+                                        ${metrics?.totalDebts?.toLocaleString() || '0.00'}
+                                    </Text>
+                                </View>
+                                <HugeiconsIcon icon={Wallet01Icon} size={32} color={theme.colors.error} />
+                            </View>
+                        </Card.Content>
+                    </Card>
+                )}
+
+                <SectionHeader
+                    title="All Transactions"
                 />
 
                 {reportsLoading || expensesLoading ? (
