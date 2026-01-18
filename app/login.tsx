@@ -1,12 +1,13 @@
+import { FadeView } from '@/src/components/ui/FadeView';
 import { db } from '@/src/db/DatabaseProvider';
 import { users } from '@/src/db/schema';
 import { useAuth } from '@/src/hooks/useAuth';
-import { ArrowDown01Icon, CircleLock02FreeIcons, LockIcon, UserIcon } from '@hugeicons/core-free-icons';
+import { ArrowDown01Icon, CircleLock02FreeIcons, UserIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, HelperText, Menu, Text, TextInput, useTheme } from 'react-native-paper';
 
@@ -67,96 +68,101 @@ export default function LoginScreen() {
             style={[styles.container, { backgroundColor: theme.colors.background }]}
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
+                <FadeView scale duration={800} style={styles.header}>
                     <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
                         <Text variant="headlineMedium" style={styles.logoText}>S</Text>
                     </View>
                     <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onSurface }]}>STOCK</Text>
                     <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>Inventory & Sales Management</Text>
-                </View>
+                </FadeView>
 
-                <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-                    <Card.Content>
-                        <Text variant="titleLarge" style={[styles.loginTitle, { color: theme.colors.onSurface }]}>Welcome Back</Text>
+                <FadeView delay={300} style={[styles.cardContainer, { backgroundColor: 'transparent' }]}>
+                    <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                        <Card.Content>
+                            <Text variant="titleLarge" style={[styles.loginTitle, { color: theme.colors.onSurface }]}>Welcome Back</Text>
 
-                        <View style={styles.inputGroup}>
-                            <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Select User</Text>
-                            <Menu
-                                visible={menuVisible}
-                                onDismiss={() => setMenuVisible(false)}
-                                anchor={
-                                    <Button
-                                        mode="outlined"
-                                        onPress={() => setMenuVisible(true)}
-                                        style={[styles.dropdownButton, { borderColor: theme.colors.outline }]}
-                                        contentStyle={styles.dropdownContent}
-                                        labelStyle={{ color: theme.colors.onSurface }}
-                                        icon={() => <HugeiconsIcon icon={ArrowDown01Icon} size={20} color={theme.colors.onSurfaceVariant} />}
-                                    >
-                                        {selectedUser ? selectedUser.fullName || selectedUser.username : 'Choose a profile'}
-                                    </Button>
-                                }
-                                style={[styles.menu, { backgroundColor: theme.colors.surfaceVariant }]}
+                            <View style={styles.inputGroup}>
+                                <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Select User</Text>
+                                <Menu
+                                    visible={menuVisible}
+                                    onDismiss={() => setMenuVisible(false)}
+                                    anchor={
+                                        <Button
+                                            mode="outlined"
+                                            onPress={() => setMenuVisible(true)}
+                                            style={[styles.dropdownButton, { borderColor: theme.colors.outline }]}
+                                            contentStyle={styles.dropdownContent}
+                                            labelStyle={{ color: theme.colors.onSurface }}
+                                            icon={() => <HugeiconsIcon icon={ArrowDown01Icon} size={20} color={theme.colors.onSurfaceVariant} />}
+                                        >
+                                            {selectedUser ? selectedUser.fullName || selectedUser.username : 'Choose a profile'}
+                                        </Button>
+                                    }
+                                    style={[styles.menu, { backgroundColor: theme.colors.surfaceVariant }]}
+                                >
+                                    {userList?.map((u: any) => (
+                                        <Menu.Item
+                                            key={u.id}
+                                            onPress={() => {
+                                                setSelectedUser(u);
+                                                setMenuVisible(false);
+                                                setError('');
+                                            }}
+                                            title={u.fullName || u.username}
+                                            titleStyle={{ color: theme.colors.onSurface }}
+                                            leadingIcon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />}
+                                        />
+                                    ))}
+                                </Menu>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Password</Text>
+                                <TextInput
+                                    mode="outlined"
+                                    value={password}
+                                    onChangeText={(text) => {
+                                        setPassword(text);
+                                        setError('');
+                                    }}
+                                    secureTextEntry
+                                    placeholder="Enter password"
+                                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={CircleLock02FreeIcons} size={20} color={theme.colors.onSurfaceVariant} />} />}
+                                    style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                                    outlineColor={theme.colors.outline}
+                                    activeOutlineColor={theme.colors.primary}
+                                    textColor={theme.colors.onSurface}
+                                    autoCapitalize="none"
+                                />
+                                {error ? (
+                                    <HelperText type="error" visible={!!error}>
+                                        {error}
+                                    </HelperText>
+                                ) : null}
+                            </View>
+
+                            <Button
+                                mode="contained"
+                                onPress={handleLogin}
+                                style={styles.loginButton}
+                                loading={loggingIn}
+                                disabled={loggingIn || !selectedUser}
+                                contentStyle={styles.loginButtonContent}
                             >
-                                {userList?.map((u: any) => (
-                                    <Menu.Item
-                                        key={u.id}
-                                        onPress={() => {
-                                            setSelectedUser(u);
-                                            setMenuVisible(false);
-                                            setError('');
-                                        }}
-                                        title={u.fullName || u.username}
-                                        titleStyle={{ color: theme.colors.onSurface }}
-                                        leadingIcon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />}
-                                    />
-                                ))}
-                            </Menu>
-                        </View>
+                                Sign In
+                            </Button>
+                        </Card.Content>
+                    </Card>
+                </FadeView>
 
-                        <View style={styles.inputGroup}>
-                            <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Password</Text>
-                            <TextInput
-                                mode="outlined"
-                                value={password}
-                                onChangeText={(text) => {
-                                    setPassword(text);
-                                    setError('');
-                                }}
-                                secureTextEntry
-                                placeholder="Enter password"
-                                left={<TextInput.Icon icon={() => <HugeiconsIcon icon={CircleLock02FreeIcons} size={20} color={theme.colors.onSurfaceVariant} />} />}
-                                style={[styles.input, { backgroundColor: theme.colors.surface }]}
-                                outlineColor={theme.colors.outline}
-                                activeOutlineColor={theme.colors.primary}
-                                textColor={theme.colors.onSurface}
-                                autoCapitalize="none"
-                            />
-                            {error ? (
-                                <HelperText type="error" visible={!!error}>
-                                    {error}
-                                </HelperText>
-                            ) : null}
-                        </View>
-
-                        <Button
-                            mode="contained"
-                            onPress={handleLogin}
-                            style={styles.loginButton}
-                            loading={loggingIn}
-                            disabled={loggingIn || !selectedUser}
-                            contentStyle={styles.loginButtonContent}
-                        >
-                            Sign In
-                        </Button>
-                    </Card.Content>
-                </Card>
-
-                <Text variant="bodySmall" style={[styles.footer, { color: theme.colors.onSurfaceVariant }]}>
-                    Offline Local Database
-                </Text>
+                <FadeView delay={600}>
+                    <Text variant="bodySmall" style={[styles.footer, { color: theme.colors.onSurfaceVariant }]}>
+                        Offline Local Database
+                    </Text>
+                </FadeView>
             </ScrollView>
         </KeyboardAvoidingView>
+    );
     );
 }
 
