@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "192054699547",
+    "project_id": "stock-49845",
+    "storage_bucket": "stock-49845.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:192054699547:android:c53e6fb701c7aa73b4fabe",
+        "android_client_info": {
+          "package_name": "com.camusmarketzw.stock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiodqAw2TpR_6gLn2P1M71OIbCPH4jUWo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
