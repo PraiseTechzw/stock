@@ -50,18 +50,15 @@ export const useProducts = () => {
         });
     }, [allProducts, allStock]);
 
-    if (productsError || stockError) {
+    /* if (productsError || stockError) {
         console.error('Error fetching inventory data:', productsError || stockError);
-    }
+    } */
 
     const addProduct = async (product: typeof products.$inferInsert) => {
         try {
-            console.log('Adding product:', product);
             const result = await db.insert(products).values(product);
-            console.log('Product added successfully:', result);
             return result;
         } catch (error) {
-            console.error('Error adding product:', error);
             throw error;
         }
     };

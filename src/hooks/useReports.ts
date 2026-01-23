@@ -14,12 +14,12 @@ export const useReports = (filter: ReportFilter = 'all') => {
     const { data: allExpensesData } = useLiveQuery(db.select().from(expensesTable));
     const { data: allStockLevels } = useLiveQuery(db.select().from(stockLevels));
 
-    console.log('[useReports] Data Status:', {
+    /* console.log('[useReports] Data Status:', {
         sales: allSales?.length,
         items: allSalesItems?.length,
         products: allProducts?.length,
         expenses: allExpensesData?.length,
-    });
+    }); */
 
     const getFilterDate = (range: ReportFilter) => {
         const now = new Date();
@@ -195,7 +195,7 @@ export const useReports = (filter: ReportFilter = 'all') => {
             })
             .slice(0, 5);
 
-        console.log('[useReports] Generated activities:', sorted.length);
+        // console.log('[useReports] Generated activities:', sorted.length);
         return sorted;
     }, [allSales, allExpensesData, allProducts]);
 

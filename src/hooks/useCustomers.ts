@@ -10,7 +10,6 @@ export const useCustomers = () => {
         try {
             await db.insert(customers).values(customer);
         } catch (error) {
-            console.error('Error adding customer:', error);
             throw error;
         }
     };
@@ -21,7 +20,6 @@ export const useCustomers = () => {
                 .set({ ...customer, updated_at: new Date().toISOString() })
                 .where(eq(customers.id, id));
         } catch (error) {
-            console.error('Error updating customer:', error);
             throw error;
         }
     };
@@ -30,7 +28,6 @@ export const useCustomers = () => {
         try {
             await db.delete(customers).where(eq(customers.id, id));
         } catch (error) {
-            console.error('Error deleting customer:', error);
             throw error;
         }
     };

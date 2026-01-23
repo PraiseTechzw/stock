@@ -20,7 +20,7 @@ export const useNotifications = () => {
                 isRead: false,
             });
         } catch (error) {
-            console.error('Error adding notification:', error);
+            // Error
         }
     };
 
@@ -30,7 +30,7 @@ export const useNotifications = () => {
                 .set({ isRead: true })
                 .where(eq(notifications.id, id));
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            // Error
         }
     };
 
@@ -39,7 +39,7 @@ export const useNotifications = () => {
             await db.update(notifications)
                 .set({ isRead: true });
         } catch (error) {
-            console.error('Error marking all notifications as read:', error);
+            // Error
         }
     };
 
@@ -47,7 +47,7 @@ export const useNotifications = () => {
         try {
             await db.delete(notifications).where(eq(notifications.id, id));
         } catch (error) {
-            console.error('Error deleting notification:', error);
+            // Error
         }
     };
 
@@ -55,7 +55,7 @@ export const useNotifications = () => {
         try {
             await db.delete(notifications);
         } catch (error) {
-            console.error('Error clearing notifications:', error);
+            // Error
         }
     };
 

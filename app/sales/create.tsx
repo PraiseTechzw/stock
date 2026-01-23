@@ -122,7 +122,6 @@ export default function QuickSaleScreen() {
 
             setSuccessVisible(true);
         } catch (error) {
-            console.error(error);
             Toast.show({
                 type: 'error',
                 text1: 'Settlement Failed',

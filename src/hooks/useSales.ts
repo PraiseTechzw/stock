@@ -73,7 +73,6 @@ export const useSales = () => {
                 return insertedOrder;
             });
         } catch (error) {
-            console.error('Error creating sales order:', error);
             throw error;
         }
     };
@@ -102,7 +101,6 @@ export const useSales = () => {
                 paymentMethod: method,
             });
         } catch (error) {
-            console.error('Error adding payment:', error);
             throw error;
         }
     };

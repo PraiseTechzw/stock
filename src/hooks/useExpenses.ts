@@ -10,7 +10,6 @@ export const useExpenses = () => {
         try {
             await db.insert(expenses).values(expense);
         } catch (error) {
-            console.error('Error adding expense:', error);
             throw error;
         }
     };
@@ -21,7 +20,6 @@ export const useExpenses = () => {
                 .set({ ...expense, updated_at: new Date().toISOString() })
                 .where(eq(expenses.id, id));
         } catch (error) {
-            console.error('Error updating expense:', error);
             throw error;
         }
     };
@@ -30,7 +28,6 @@ export const useExpenses = () => {
         try {
             await db.delete(expenses).where(eq(expenses.id, id));
         } catch (error) {
-            console.error('Error deleting expense:', error);
             throw error;
         }
     };

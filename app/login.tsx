@@ -112,7 +112,7 @@ export default function LoginScreen() {
                     setIsFreshSetup(true);
                 }
             } catch (e) {
-                console.error('State check failed', e);
+                // state check fail
             }
         };
         checkSystemState();
@@ -135,7 +135,6 @@ export default function LoginScreen() {
                 setStep('register');
             }
         } catch (e) {
-            console.error(e);
             setError('System error. Try again.');
         } finally {
             setLoading(false);

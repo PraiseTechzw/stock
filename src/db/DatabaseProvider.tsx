@@ -52,7 +52,6 @@ export const DatabaseProvider = ({ children }: { children: React.ReactNode }) =>
                         passwordHash: passwordHash,
                         role: 'admin',
                     });
-                    console.log('Default admin user created');
                 }
             })();
         }
@@ -64,8 +63,7 @@ export const DatabaseProvider = ({ children }: { children: React.ReactNode }) =>
     }
 
     if (error) {
-        console.error('Migration error:', error);
-        // Handle error appropriately
+        // Handle migration error
     }
 
     return (
