@@ -1,8 +1,11 @@
 import { useCustomers } from '@/src/hooks/useCustomers';
-import { Stack, useRouter } from 'expo-router';
+import { ArrowLeft02Icon, CallIcon, Location01Icon, Mail01Icon, UserIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, TextInput, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function AddCustomerScreen() {
@@ -32,8 +35,6 @@ export default function AddCustomerScreen() {
                 type: 'success',
                 text1: 'Customer Created',
                 text2: `${form.name} profile has been saved.`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             router.back();
@@ -43,23 +44,43 @@ export default function AddCustomerScreen() {
                 type: 'error',
                 text1: 'Error',
                 text2: 'Could not create customer profile.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: 'New Customer' }} />
-            <View style={styles.form}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>New Profile</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>Customer Directory</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
+                <View style={styles.avatarPlaceholder}>
+                    <View style={[styles.iconCircle, { backgroundColor: theme.colors.primaryContainer }]}>
+                        <HugeiconsIcon icon={UserIcon} size={42} color={theme.colors.primary} />
+                    </View>
+                    <Text variant="labelLarge" style={{ color: theme.colors.primary, fontWeight: '900', marginTop: 12 }}>
+                        IDENTITY INFO
+                    </Text>
+                </View>
+
                 <TextInput
-                    label="Customer Name *"
+                    label="Customer Full Name *"
                     mode="outlined"
                     value={form.name}
                     onChangeText={(text) => setForm({ ...form, name: text })}
                     style={styles.input}
                     activeOutlineColor={theme.colors.primary}
+                    outlineStyle={{ borderRadius: 16 }}
+                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.outline} />} />}
                 />
                 <TextInput
                     label="Email Address"
@@ -69,6 +90,8 @@ export default function AddCustomerScreen() {
                     keyboardType="email-address"
                     style={styles.input}
                     activeOutlineColor={theme.colors.primary}
+                    outlineStyle={{ borderRadius: 16 }}
+                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={Mail01Icon} size={20} color={theme.colors.outline} />} />}
                 />
                 <TextInput
                     label="Phone Number"
@@ -78,9 +101,11 @@ export default function AddCustomerScreen() {
                     keyboardType="phone-pad"
                     style={styles.input}
                     activeOutlineColor={theme.colors.primary}
+                    outlineStyle={{ borderRadius: 16 }}
+                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={CallIcon} size={20} color={theme.colors.outline} />} />}
                 />
                 <TextInput
-                    label="Billing Address"
+                    label="Physical Address"
                     mode="outlined"
                     value={form.address}
                     onChangeText={(text) => setForm({ ...form, address: text })}
@@ -88,6 +113,8 @@ export default function AddCustomerScreen() {
                     numberOfLines={3}
                     style={styles.input}
                     activeOutlineColor={theme.colors.primary}
+                    outlineStyle={{ borderRadius: 16 }}
+                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={Location01Icon} size={20} color={theme.colors.outline} />} />}
                 />
 
                 <Button
@@ -95,12 +122,13 @@ export default function AddCustomerScreen() {
                     onPress={handleSave}
                     style={styles.button}
                     contentStyle={styles.buttonContent}
+                    labelStyle={{ fontWeight: '900' }}
                     disabled={!form.name}
                 >
-                    Create Customer Profile
+                    Create Profile
                 </Button>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -108,17 +136,52 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
+    },
     form: {
-        padding: 20,
+        padding: 24,
+        paddingBottom: 60,
+    },
+    avatarPlaceholder: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    iconCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     input: {
         marginBottom: 16,
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
     },
     button: {
-        marginTop: 16,
-        borderRadius: 16,
-        elevation: 4,
+        marginTop: 24,
+        borderRadius: 18,
+        backgroundColor: '#6366f1',
     },
     buttonContent: {
         height: 56,

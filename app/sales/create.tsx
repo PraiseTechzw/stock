@@ -10,7 +10,10 @@ import {
     CheckmarkCircle02Icon,
     Coins01Icon,
     CreditCardIcon,
+    MinusSignIcon,
     PackageIcon,
+    PlusSignIcon,
+    Search01Icon,
     StarIcon,
     UserIcon
 } from '@hugeicons/core-free-icons';
@@ -20,8 +23,8 @@ import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, Card, Dialog, Divider, List, Portal, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Badge, Button, Card, Dialog, Divider, Portal, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -47,7 +50,6 @@ export default function QuickSaleScreen() {
 
     const sortedProducts = useMemo(() => {
         return [...products].sort((a, b) => {
-            // Favorites first
             if (a.isFavorite && !b.isFavorite) return -1;
             if (!a.isFavorite && b.isFavorite) return 1;
             return a.name.localeCompare(b.name);
@@ -91,16 +93,6 @@ export default function QuickSaleScreen() {
         }).filter(item => item.quantity > 0));
     };
 
-    const applyQuickDiscount = (productId: number, type: 'percent' | 'fixed', value: number) => {
-        setCart(cart.map(item => {
-            if (item.productId === productId) {
-                const discount = type === 'percent' ? (item.price * item.quantity * (value / 100)) : value;
-                return { ...item, discount };
-            }
-            return item;
-        }));
-    };
-
     const handleConfirmSale = async () => {
         if (cart.length === 0) return;
         try {
@@ -114,13 +106,9 @@ export default function QuickSaleScreen() {
 
             setLastOrderId(order.id);
 
-            // 1. Automated Low Stock Check & Notification
             for (const item of cart) {
                 const product = products.find(p => p.id === item.productId);
                 if (product) {
-                    // Note: In a real app, we'd query the fresh stock level from DB after the sale
-                    // but for immediate feedback we can estimate or use a hook.
-                    // Here we'll just check if the product's minStockLevel is relevant.
                     if (product.minStockLevel && product.totalQuantity - item.quantity < product.minStockLevel) {
                         await addNotification(
                             'Low Stock Alert',
@@ -137,10 +125,8 @@ export default function QuickSaleScreen() {
             console.error(error);
             Toast.show({
                 type: 'error',
-                text1: 'Failed',
-                text2: 'Could not settle transaction.',
-                position: 'bottom',
-                bottomOffset: 40,
+                text1: 'Settlement Failed',
+                text2: 'Could not finalize the transaction.',
             });
         }
     };
@@ -148,8 +134,13 @@ export default function QuickSaleScreen() {
     const handleShareReceipt = async () => {
         if (!lastOrderId) return;
         try {
-            // Reusing a simplified version of the invoice HTML
-            const html = `<html><body><h1>Receipt #${lastOrderId}</h1><p>Total: $${cartTotal.toFixed(2)}</p></body></html>`;
+            const html = `<html><body style="padding:40px; font-family:sans-serif;">
+                <h1 style="color:${theme.colors.primary}">Receipt #${lastOrderId}</h1>
+                <hr/>
+                <p>Status: ${paymentStatus.toUpperCase()}</p>
+                <p>Customer: ${selectedCustomer?.name || 'Walk-in'}</p>
+                <h2 style="text-align:right">Total: $${cartTotal.toFixed(2)}</h2>
+            </body></html>`;
             const { uri } = await Print.printToFileAsync({ html });
             await Sharing.shareAsync(uri);
         } catch (e) {
@@ -164,31 +155,34 @@ export default function QuickSaleScreen() {
                     <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
                         <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
                         <View style={{ marginLeft: 12 }}>
-                            <Text variant="headlineMedium" style={styles.greeting}>Quick Sale</Text>
-                            <Text variant="bodyLarge" style={styles.userName}>New Transaction</Text>
+                            <Text variant="headlineMedium" style={styles.greeting}>Checkout</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>
+                                {step === 1 ? 'Select products' : step === 2 ? 'Select customer' : 'Settlement'}
+                            </Text>
                         </View>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {step === 1 ? (
-                // --- STEP 1: FAST PRODUCT PICKER ---
+            {step === 1 && (
                 <View style={{ flex: 1 }}>
                     <View style={styles.topBar}>
                         <Searchbar
-                            placeholder="Find product..."
+                            placeholder="Find items..."
                             onChangeText={setProductSearch}
                             value={productSearch}
-                            style={[styles.miniSearch, { backgroundColor: theme.colors.surface }]}
-                            iconColor={theme.colors.primary}
+                            style={[styles.miniSearch, { backgroundColor: theme.colors.surfaceVariant + '40' }]}
+                            icon={() => <HugeiconsIcon icon={Search01Icon} size={20} color={theme.colors.primary} />}
+                            inputStyle={{ fontSize: 14 }}
+                            elevation={0}
                         />
                         <TouchableOpacity
                             style={[styles.customerChip, { backgroundColor: theme.colors.primaryContainer }]}
                             onPress={() => setStep(2)}
                         >
                             <HugeiconsIcon icon={UserIcon} size={16} color={theme.colors.primary} />
-                            <Text variant="labelMedium" style={{ color: theme.colors.primary, marginLeft: 4 }}>
-                                {selectedCustomer?.name || 'Walk-in'}
+                            <Text variant="labelLarge" style={{ color: theme.colors.primary, marginLeft: 8, fontWeight: '900' }}>
+                                {selectedCustomer?.name?.split(' ')[0] || 'Walk-in'}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -203,40 +197,38 @@ export default function QuickSaleScreen() {
                         renderItem={({ item, index }) => {
                             const cartItem = cart.find(i => i.productId === item.id);
                             return (
-                                <Animated.View entering={FadeInDown.delay(index * 50)}>
+                                <Animated.View entering={FadeInDown.delay(index * 30)} style={{ width: '48.5%' }}>
                                     <TouchableOpacity
                                         style={[
                                             styles.productCard,
                                             { backgroundColor: theme.colors.surface },
-                                            cartItem && { borderColor: theme.colors.primary, borderWidth: 2 }
+                                            cartItem && { borderColor: theme.colors.primary, borderWidth: 1.5 }
                                         ]}
                                         onPress={() => addToCart(item)}
+                                        activeOpacity={0.7}
                                     >
-                                        {item.isFavorite && (
-                                            <View style={styles.favoriteBadge}>
-                                                <HugeiconsIcon icon={StarIcon} size={12} color="#ffd700" />
-                                            </View>
-                                        )}
-                                        {cartItem && (
-                                            <View style={styles.selectedTick}>
-                                                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color={theme.colors.primary} />
-                                            </View>
-                                        )}
                                         <View style={styles.imageBox}>
                                             {item.imageUri ? (
                                                 <Image source={{ uri: item.imageUri }} style={styles.productImage} />
                                             ) : (
-                                                <View style={[styles.pIconBg, { backgroundColor: theme.colors.primaryContainer + '40' }]}>
-                                                    <HugeiconsIcon icon={PackageIcon} size={32} color={theme.colors.primary} />
+                                                <View style={[styles.pIconBg, { backgroundColor: theme.colors.surfaceVariant }]}>
+                                                    <HugeiconsIcon icon={PackageIcon} size={28} color={theme.colors.outline} />
+                                                </View>
+                                            )}
+                                            {item.isFavorite && (
+                                                <View style={styles.favoriteBadge}>
+                                                    <HugeiconsIcon icon={StarIcon} size={10} color="#fff" />
                                                 </View>
                                             )}
                                         </View>
-                                        <Text variant="labelLarge" numberOfLines={1} style={styles.pName}>{item.name}</Text>
-                                        <Text variant="bodyLarge" style={{ fontWeight: '900', color: theme.colors.primary }}>${item.sellingPrice}</Text>
 
-                                        <View style={styles.stockStatus}>
-                                            <Text variant="labelSmall" style={{ color: item.totalQuantity > 5 ? theme.colors.outline : theme.colors.error, fontWeight: '700' }}>
-                                                {item.totalQuantity > 0 ? `${item.totalQuantity} in stock` : 'Out of Stock'}
+                                        <Text variant="titleSmall" numberOfLines={1} style={styles.pName}>{item.name}</Text>
+                                        <Text variant="labelLarge" style={{ fontWeight: '900', color: theme.colors.primary }}>${item.sellingPrice}</Text>
+
+                                        <View style={styles.stockLabel}>
+                                            <View style={[styles.dot, { backgroundColor: item.totalQuantity > 5 ? '#22c55e' : '#ef4444' }]} />
+                                            <Text variant="labelSmall" style={{ color: theme.colors.outlineVariant }}>
+                                                {item.totalQuantity} Units
                                             </Text>
                                         </View>
 
@@ -246,16 +238,16 @@ export default function QuickSaleScreen() {
                                                     onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
                                                     style={[styles.smallActionBtn, { backgroundColor: theme.colors.surfaceVariant }]}
                                                 >
-                                                    <Text style={{ fontWeight: 'bold', fontSize: 18 }}>-</Text>
+                                                    <HugeiconsIcon icon={MinusSignIcon} size={14} color="#000" />
                                                 </TouchableOpacity>
                                                 <View style={styles.qtyBadge}>
-                                                    <Text style={{ fontWeight: 'bold' }}>{cartItem.quantity}</Text>
+                                                    <Text style={{ fontWeight: '900' }}>{cartItem.quantity}</Text>
                                                 </View>
                                                 <TouchableOpacity
                                                     onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }}
                                                     style={[styles.smallActionBtn, { backgroundColor: theme.colors.primary }]}
                                                 >
-                                                    <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#fff' }}>+</Text>
+                                                    <HugeiconsIcon icon={PlusSignIcon} size={14} color="#fff" />
                                                 </TouchableOpacity>
                                             </View>
                                         )}
@@ -265,84 +257,110 @@ export default function QuickSaleScreen() {
                         }}
                     />
 
-                    <Surface style={[styles.bottomSettle, { backgroundColor: theme.colors.surface }]} elevation={5}>
-                        <View style={styles.settleInfo}>
-                            <Text variant="labelSmall">TOTAL TO PAY</Text>
-                            <Text variant="headlineSmall" style={{ fontWeight: '900', color: theme.colors.primary }}>${cartTotal.toFixed(2)}</Text>
+                    <Surface style={styles.bottomSettle} elevation={5}>
+                        <View>
+                            <Text variant="labelSmall" style={{ opacity: 0.6, fontWeight: '900' }}>TOTAL AMOUNT</Text>
+                            <Text variant="headlineMedium" style={{ fontWeight: '900', color: theme.colors.primary, letterSpacing: -1 }}>
+                                ${cartTotal.toFixed(2)}
+                            </Text>
                         </View>
                         <Button
                             mode="contained"
                             disabled={cart.length === 0}
                             style={styles.settleBtn}
                             contentStyle={{ height: 56 }}
+                            labelStyle={{ fontWeight: '900' }}
                             onPress={() => setStep(3)}
                         >
-                            Complete Sale
+                            Checkout ({cart.length})
                         </Button>
                     </Surface>
                 </View>
-            ) : step === 2 ? (
-                // --- STEP 2: CUSTOMER SELECT (PROMPT) ---
-                <View style={[styles.stepContainer, { padding: 20 }]}>
-                    <Text variant="headlineSmall" style={styles.stepTitle}>Who is buying?</Text>
-                    <Button
-                        mode="contained"
-                        onPress={() => { setSelectedCustomerId(null); setStep(1); }}
-                        style={styles.bigBtn}
-                    >
-                        Walk-in (Anonymous)
-                    </Button>
-                    <Divider style={{ marginVertical: 16 }} />
-                    <Text variant="labelLarge" style={{ marginBottom: 12 }}>OR SELECT FREQUENT CUSTOMER</Text>
+            )}
+
+            {step === 2 && (
+                <View style={styles.stepContainer}>
+                    <View style={{ padding: 20 }}>
+                        <Text variant="headlineSmall" style={styles.stepTitle}>Assign Customer</Text>
+                        <TouchableOpacity
+                            style={[styles.walkInCard, { backgroundColor: theme.colors.primaryContainer }]}
+                            onPress={() => { setSelectedCustomerId(null); setStep(1); }}
+                        >
+                            <View style={styles.walkInIcon}>
+                                <HugeiconsIcon icon={UserIcon} size={28} color={theme.colors.primary} />
+                            </View>
+                            <View>
+                                <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>Walk-in Customer</Text>
+                                <Text variant="bodySmall" style={{ color: theme.colors.primary, opacity: 0.8 }}>No account creation needed</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <Divider style={{ marginVertical: 24 }} />
+                        <Text variant="labelLarge" style={styles.sectionLabel}>FREQUENT CUSTOMERS</Text>
+                    </View>
+
                     <FlatList
                         data={customers}
+                        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
                         renderItem={({ item }) => (
-                            <List.Item
-                                title={item.name}
-                                description={item.phone}
-                                left={p => <List.Icon {...p} icon="account" />}
+                            <TouchableOpacity
+                                style={[styles.customerItem, { backgroundColor: theme.colors.surface }]}
                                 onPress={() => { setSelectedCustomerId(item.id); setStep(1); }}
-                                style={{ backgroundColor: theme.colors.surface, borderRadius: 12, marginBottom: 8 }}
-                            />
+                            >
+                                <Surface style={styles.custAvatar} elevation={0}>
+                                    <Text style={{ fontWeight: 'bold', color: theme.colors.primary }}>{item.name[0]}</Text>
+                                </Surface>
+                                <View style={{ flex: 1 }}>
+                                    <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{item.name}</Text>
+                                    <Text variant="bodySmall" style={{ color: theme.colors.outlineVariant }}>{item.phone}</Text>
+                                </View>
+                                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color={theme.colors.outlineVariant} />
+                            </TouchableOpacity>
                         )}
+                        ListFooterComponent={<Button onPress={() => setStep(1)} style={{ marginTop: 20 }}>Go Back</Button>}
                     />
-                    <Button onPress={() => setStep(1)}>Cancel</Button>
                 </View>
-            ) : (
-                // --- STEP 3: SETTLEMENT SCREEN ---
-                <ScrollView contentContainerStyle={styles.settleScreen}>
+            )}
+
+            {step === 3 && (
+                <ScrollView contentContainerStyle={styles.settleScreen} showsVerticalScrollIndicator={false}>
                     <Surface style={styles.receiptHeader} elevation={0}>
-                        <Text variant="labelLarge" style={styles.receiptSub}>TOTAL COLLECTABLE</Text>
-                        <Text variant="displaySmall" style={styles.receiptTotal}>${cartTotal.toFixed(2)}</Text>
+                        <Text variant="labelSmall" style={styles.receiptSub}>GRAND TOTAL DUE</Text>
+                        <Text variant="displayMedium" style={styles.receiptTotal}>${cartTotal.toFixed(2)}</Text>
+                        <View style={styles.custBadge}>
+                            <Text variant="labelLarge" style={{ color: theme.colors.primary, fontWeight: '900' }}>
+                                For: {selectedCustomer?.name || 'Walk-in'}
+                            </Text>
+                        </View>
                     </Surface>
 
                     <Card style={styles.settleCard}>
                         <Card.Content>
-                            <Text variant="labelLarge" style={styles.sectionLabel}>PAYMENT DETAILS</Text>
+                            <Text variant="labelLarge" style={styles.sectionLabel}>PAYMENT METHOD</Text>
 
                             <View style={styles.methodGrid}>
                                 {[
-                                    { id: 'cash', label: 'USD Cash', icon: Coins01Icon },
-                                    { id: 'eco_cash', label: 'EcoCash', icon: CreditCardIcon },
-                                    { id: 'zipit', label: 'ZIPIT/Bank', icon: CheckmarkCircle02Icon }
+                                    { id: 'cash', label: 'Cash', icon: Coins01Icon },
+                                    { id: 'bank', label: 'Bank', icon: CreditCardIcon },
+                                    { id: 'card', label: 'Card', icon: CheckmarkCircle02Icon }
                                 ].map(m => (
                                     <TouchableOpacity
                                         key={m.id}
                                         style={[
                                             styles.methodTab,
-                                            { borderColor: paymentMethod === m.id ? theme.colors.primary : '#e2e8f0' },
-                                            paymentMethod === m.id && { backgroundColor: theme.colors.primaryContainer + '40' }
+                                            { borderColor: paymentMethod === m.id ? theme.colors.primary : theme.colors.outlineVariant },
+                                            paymentMethod === m.id && { backgroundColor: theme.colors.primaryContainer }
                                         ]}
                                         onPress={() => setPaymentMethod(m.id)}
                                     >
                                         <HugeiconsIcon
                                             icon={m.icon}
                                             size={22}
-                                            color={paymentMethod === m.id ? theme.colors.primary : '#94a3b8'}
+                                            color={paymentMethod === m.id ? theme.colors.primary : theme.colors.outline}
                                         />
                                         <Text style={[
                                             styles.methodLabel,
-                                            { color: paymentMethod === m.id ? theme.colors.primary : '#64748b' }
+                                            { color: paymentMethod === m.id ? theme.colors.primary : theme.colors.outline }
                                         ]}>{m.label}</Text>
                                     </TouchableOpacity>
                                 ))}
@@ -350,24 +368,24 @@ export default function QuickSaleScreen() {
 
                             <View style={styles.paymentToggleRow}>
                                 <TouchableOpacity
-                                    style={[styles.toggleBtn, paymentStatus === 'paid' && { backgroundColor: '#10b981' }]}
+                                    style={[styles.toggleBtn, paymentStatus === 'paid' && { backgroundColor: '#22c55e', borderColor: '#22c55e' }]}
                                     onPress={() => setPaymentStatus('paid')}
                                 >
                                     <Text style={[styles.toggleBtnText, paymentStatus === 'paid' && { color: '#fff' }]}>Fully Paid</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.toggleBtn, paymentStatus === 'credit' && { backgroundColor: '#ef4444' }]}
+                                    style={[styles.toggleBtn, paymentStatus === 'credit' && { backgroundColor: '#ef4444', borderColor: '#ef4444' }]}
                                     onPress={() => setPaymentStatus('credit')}
                                 >
-                                    <Text style={[styles.toggleBtnText, paymentStatus === 'credit' && { color: '#fff' }]}>Credit/IOU</Text>
+                                    <Text style={[styles.toggleBtnText, paymentStatus === 'credit' && { color: '#fff' }]}>IOU (Credit)</Text>
                                 </TouchableOpacity>
                             </View>
 
                             {paymentStatus === 'credit' && (
                                 <Surface style={styles.iouBanner} elevation={0}>
-                                    <HugeiconsIcon icon={Calendar02Icon} size={16} color="#ef4444" />
+                                    <HugeiconsIcon icon={Calendar02Icon} size={18} color="#ef4444" />
                                     <Text style={styles.iouText}>
-                                        Payment due in 7 days. Reminder will be sent.
+                                        Payment will be expected within 7 days.
                                     </Text>
                                 </Surface>
                             )}
@@ -377,17 +395,17 @@ export default function QuickSaleScreen() {
                     <Card style={[styles.settleCard, { marginTop: 16 }]}>
                         <Card.Content>
                             <View style={styles.summaryTop}>
-                                <Text variant="labelLarge" style={styles.sectionLabel}>BILL SUMMARY</Text>
-                                <Text style={styles.itemCount}>{cart.length} Items</Text>
+                                <Text variant="labelLarge" style={styles.sectionLabel}>ORDER SUMMARY</Text>
+                                <Badge style={{ backgroundColor: theme.colors.primaryContainer, color: theme.colors.primary, fontWeight: 'bold' }}>{cart.length} ITEMS</Badge>
                             </View>
 
                             {cart.map(item => {
                                 const p = products.find(x => x.id === item.productId);
                                 return (
                                     <View key={item.productId} style={styles.billItem}>
-                                        <View style={styles.billItemInfo}>
+                                        <View style={{ flex: 1 }}>
                                             <Text style={styles.billItemName}>{p?.name}</Text>
-                                            <Text style={styles.billItemQty}>{item.quantity} units @ ${item.price}</Text>
+                                            <Text style={styles.billItemQty}>{item.quantity} units x ${item.price}</Text>
                                         </View>
                                         <Text style={styles.billItemPrice}>${(item.price * item.quantity - item.discount).toFixed(2)}</Text>
                                     </View>
@@ -410,58 +428,60 @@ export default function QuickSaleScreen() {
                             contentStyle={{ height: 56 }}
                             onPress={() => setStep(1)}
                         >
-                            Back to Cart
+                            Modify Order
                         </Button>
                         <Button
                             mode="contained"
                             style={styles.confirmBtn}
                             contentStyle={{ height: 56 }}
+                            labelStyle={{ fontWeight: '900' }}
                             onPress={handleConfirmSale}
                         >
-                            Finalize Order
+                            Finalize Settlement
                         </Button>
                     </View>
                 </ScrollView>
             )}
 
             <Portal>
-                <Dialog visible={successVisible} dismissable={false} style={{ borderRadius: 32, alignItems: 'center', paddingVertical: 20 }}>
-                    <Animated.View entering={FadeIn}>
-                        <Surface style={[styles.successIcon, { backgroundColor: '#10b981' }]} elevation={4}>
-                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={48} color="#fff" />
+                <Dialog visible={successVisible} dismissable={false} style={{ borderRadius: 32, padding: 20 }}>
+                    <View style={{ alignItems: 'center' }}>
+                        <Surface style={[styles.successIcon, { backgroundColor: '#22c55e' }]} elevation={4}>
+                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={56} color="#fff" />
                         </Surface>
-                    </Animated.View>
-
-                    <Text variant="headlineMedium" style={{ fontWeight: '900', marginTop: 20 }}>Sale Confirmed!</Text>
-                    <Text variant="bodyMedium" style={{ opacity: 0.6, textAlign: 'center', marginTop: 8, paddingHorizontal: 20 }}>
-                        Transaction #${lastOrderId} has been recorded.
-                    </Text>
+                        <Text variant="headlineMedium" style={{ fontWeight: '900', marginTop: 24, textAlign: 'center' }}>Success!</Text>
+                        <Text variant="bodyLarge" style={{ opacity: 0.6, textAlign: 'center', marginTop: 8 }}>
+                            Transaction recorded as #{lastOrderId}
+                        </Text>
+                    </View>
 
                     <View style={styles.successActions}>
                         <Button
                             mode="contained"
                             onPress={handleShareReceipt}
                             style={styles.successBtn}
-                            icon="share"
+                            contentStyle={{ height: 48 }}
                         >
                             Share Receipt
                         </Button>
                         <Button
-                            mode="outlined"
+                            mode="contained-tonal"
                             onPress={() => {
                                 setSuccessVisible(false);
                                 setCart([]);
                                 setStep(1);
                             }}
-                            style={[styles.successBtn, { borderColor: theme.colors.primary }]}
+                            style={styles.successBtn}
+                            contentStyle={{ height: 48 }}
                         >
                             New Sale
                         </Button>
                         <Button
                             mode="text"
                             onPress={() => router.replace('/(tabs)/sales')}
+                            style={{ marginTop: 8 }}
                         >
-                            Go to Sales History
+                            Dashboard
                         </Button>
                     </View>
                 </Dialog>
@@ -499,82 +519,97 @@ const styles = StyleSheet.create({
     },
     topBar: {
         flexDirection: 'row',
-        padding: 12,
+        paddingHorizontal: 20,
+        paddingBottom: 16,
         alignItems: 'center',
-        gap: 8,
+        gap: 12,
     },
     miniSearch: {
         flex: 1,
-        height: 44,
-        borderRadius: 12,
-        elevation: 0,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        height: 48,
+        borderRadius: 16,
     },
     customerChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        height: 44,
-        borderRadius: 22,
+        paddingHorizontal: 16,
+        height: 48,
+        borderRadius: 16,
     },
     gridContainer: {
-        padding: 8,
+        paddingHorizontal: 20,
         paddingBottom: 120,
     },
     gridRow: {
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 12,
     },
     productCard: {
-        width: '48.5%',
         padding: 12,
-        borderRadius: 20,
+        borderRadius: 24,
         alignItems: 'center',
         elevation: 1,
         borderWidth: 1.5,
         borderColor: 'transparent',
     },
-    selectedTick: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        zIndex: 10,
-    },
-    favoriteBadge: {
-        position: 'absolute',
-        top: 8,
-        left: 8,
-    },
     imageBox: {
-        width: 80,
-        height: 80,
+        width: '100%',
+        height: 90,
         borderRadius: 16,
         overflow: 'hidden',
-        marginBottom: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
+        marginBottom: 12,
+        position: 'relative',
     },
     productImage: {
         width: '100%',
         height: '100%',
     },
     pIconBg: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+    },
+    favoriteBadge: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        backgroundColor: '#fbbf24',
+        padding: 4,
+        borderRadius: 8,
     },
     pName: {
-        fontWeight: '700',
-        marginBottom: 4,
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginBottom: 2,
         textAlign: 'center',
-        fontSize: 13,
     },
-    stockStatus: {
+    stockLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginTop: 4,
+        gap: 4,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    cardActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        gap: 12,
+    },
+    smallActionBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qtyBadge: {
+        minWidth: 20,
+        alignItems: 'center',
     },
     bottomSettle: {
         position: 'absolute',
@@ -588,146 +623,174 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
-    },
-    settleInfo: {
-        flex: 1,
+        backgroundColor: '#fff',
     },
     settleBtn: {
-        flex: 1.2,
+        flex: 1,
         borderRadius: 16,
+        marginLeft: 24,
+        backgroundColor: '#6366f1',
     },
     stepContainer: {
         flex: 1,
     },
     stepTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: '900',
-        marginBottom: 20,
-        color: '#1e293b',
+        marginBottom: 24,
+        letterSpacing: -0.5,
     },
-    bigBtn: {
-        height: 60,
-        justifyContent: 'center',
+    walkInCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderRadius: 24,
+        gap: 16,
+    },
+    walkInIcon: {
+        width: 56,
+        height: 56,
         borderRadius: 16,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sectionLabel: {
+        color: '#94a3b8',
+        fontWeight: '900',
+        letterSpacing: 1.5,
+        fontSize: 10,
+        marginBottom: 16,
+    },
+    customerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 20,
+        marginBottom: 12,
+        gap: 16,
+    },
+    custAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     settleScreen: {
-        padding: 16,
+        padding: 20,
         paddingBottom: 40,
     },
     receiptHeader: {
-        paddingVertical: 32,
+        paddingVertical: 40,
         alignItems: 'center',
         backgroundColor: 'transparent',
     },
     receiptSub: {
         color: '#94a3b8',
         fontWeight: '900',
-        letterSpacing: 1.5,
-        fontSize: 10,
+        letterSpacing: 2,
+        fontSize: 11,
     },
     receiptTotal: {
         fontWeight: '900',
         color: '#1e293b',
-        marginTop: 4,
+        letterSpacing: -2,
+    },
+    custBadge: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
     },
     settleCard: {
-        borderRadius: 24,
-        elevation: 1,
+        borderRadius: 28,
         backgroundColor: '#fff',
-    },
-    sectionLabel: {
-        marginBottom: 16,
-        color: '#94a3b8',
-        fontSize: 10,
-        letterSpacing: 1.5,
-        fontWeight: '900',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     methodGrid: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 12,
     },
     methodTab: {
         flex: 1,
-        height: 70,
-        justifyContent: 'center',
+        paddingVertical: 16,
         alignItems: 'center',
         borderWidth: 2,
-        borderRadius: 16,
+        borderRadius: 20,
     },
     methodLabel: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: '900',
-        marginTop: 6,
+        marginTop: 8,
     },
     paymentToggleRow: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 20,
+        marginTop: 24,
     },
     toggleBtn: {
         flex: 1,
-        height: 48,
-        borderRadius: 12,
+        height: 52,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#f1f5f9',
         backgroundColor: '#f1f5f9',
     },
     toggleBtnText: {
         fontWeight: '900',
-        fontSize: 13,
+        fontSize: 14,
         color: '#64748b',
     },
     iouBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginTop: 16,
-        padding: 12,
-        borderRadius: 12,
+        gap: 12,
+        marginTop: 20,
+        padding: 16,
+        borderRadius: 16,
         backgroundColor: '#fef2f2',
     },
     iouText: {
         color: '#ef4444',
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 13,
+        fontWeight: '700',
         flex: 1,
     },
     summaryTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
-    },
-    itemCount: {
-        fontSize: 12,
-        color: '#94a3b8',
-        fontWeight: '700',
+        marginBottom: 20,
     },
     billItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
-    },
-    billItemInfo: {
-        flex: 1,
+        marginBottom: 16,
     },
     billItemName: {
-        fontWeight: '700',
+        fontWeight: 'bold',
         color: '#1e293b',
-        fontSize: 14,
+        fontSize: 15,
     },
     billItemQty: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#64748b',
     },
     billItemPrice: {
         fontWeight: '900',
+        fontSize: 16,
         color: '#1e293b',
     },
     billDivider: {
-        marginVertical: 16,
-        backgroundColor: '#e2e8f0',
+        marginVertical: 20,
+        height: 1.5,
     },
     finalTotalRow: {
         flexDirection: 'row',
@@ -735,14 +798,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     finalTotalLabel: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '900',
-        color: '#64748b',
+        color: '#94a3b8',
     },
     finalTotalValue: {
-        fontSize: 24,
+        fontSize: 32,
         fontWeight: '900',
-        color: '#6366f1',
+        color: '#4f46e5',
+        letterSpacing: -1,
     },
     finalActions: {
         flexDirection: 'row',
@@ -752,13 +816,11 @@ const styles = StyleSheet.create({
     },
     cancelBtn: {
         flex: 1,
-        borderRadius: 16,
-        borderColor: '#e2e8f0',
-        borderWidth: 1.5,
+        borderRadius: 18,
     },
     confirmBtn: {
-        flex: 2,
-        borderRadius: 16,
+        flex: 1.5,
+        borderRadius: 18,
         backgroundColor: '#6366f1',
     },
     successIcon: {
@@ -770,30 +832,10 @@ const styles = StyleSheet.create({
     },
     successActions: {
         width: '100%',
-        paddingHorizontal: 20,
         marginTop: 32,
         gap: 12,
     },
     successBtn: {
         borderRadius: 16,
-        height: 48,
-        justifyContent: 'center',
-    },
-    cardActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 12,
-        gap: 8,
-    },
-    smallActionBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    qtyBadge: {
-        minWidth: 20,
-        alignItems: 'center',
     },
 });
