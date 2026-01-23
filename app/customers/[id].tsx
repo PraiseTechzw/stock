@@ -1,5 +1,6 @@
+import { SubHeader } from '@/src/components/ui/SubHeader';
 import { useCustomers } from '@/src/hooks/useCustomers';
-import { ArrowLeft02Icon, CallIcon, CheckmarkCircle01Icon, Delete02Icon, Location01Icon, Mail01Icon, UserIcon } from '@hugeicons/core-free-icons';
+import { CallIcon, CheckmarkCircle01Icon, Delete02Icon, Location01Icon, Mail01Icon, UserIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -82,17 +83,15 @@ export default function CustomerDetailScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerRow}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
-                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
-                        <View style={{ marginLeft: 12 }}>
-                            <Text variant="headlineMedium" style={styles.greeting}>Edit Profile</Text>
-                            <Text variant="bodyLarge" style={styles.userName}>{customer.name}</Text>
-                        </View>
+            <SubHeader
+                title="Client Profile"
+                subtitle={customer.name}
+                rightAction={
+                    <TouchableOpacity onPress={handleDelete}>
+                        <HugeiconsIcon icon={Delete02Icon} size={24} color={theme.colors.error} />
                     </TouchableOpacity>
-                </View>
-            </View>
+                }
+            />
 
             <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
                 <View style={styles.avatarPlaceholder}>

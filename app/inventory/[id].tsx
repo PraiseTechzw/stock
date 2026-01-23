@@ -1,7 +1,8 @@
-import { Can } from '@/src/components/auth/Can';
 import { BarcodeScannerModal } from '@/src/components/BarcodeScannerModal';
+import { Can } from '@/src/components/auth/Can';
+import { SubHeader } from '@/src/components/ui/SubHeader';
 import { useProducts } from '@/src/hooks/useProducts';
-import { ArrowLeft02Icon, Camera01Icon, Database01Icon, Delete02Icon, Image01Icon, InformationCircleIcon, QrCode01Icon, StarIcon } from '@hugeicons/core-free-icons';
+import { Camera01Icon, Database01Icon, Delete02Icon, Image01Icon, InformationCircleIcon, QrCode01Icon, StarIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -135,17 +136,15 @@ export default function ProductDetailScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerRow}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
-                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
-                        <View style={{ marginLeft: 12 }}>
-                            <Text variant="headlineMedium" style={styles.greeting}>Edit Info</Text>
-                            <Text variant="bodyLarge" style={styles.userName}>{product.name}</Text>
-                        </View>
+            <SubHeader
+                title="Product Details"
+                subtitle={product?.name}
+                rightAction={
+                    <TouchableOpacity onPress={handleDelete}>
+                        <HugeiconsIcon icon={Delete02Icon} size={24} color={theme.colors.error} />
                     </TouchableOpacity>
-                </View>
-            </View>
+                }
+            />
 
             <ScrollView contentContainerStyle={styles.formContainer} showsVerticalScrollIndicator={false}>
                 <Surface style={[styles.imageContainer, { backgroundColor: theme.colors.surfaceVariant + '40' }]} elevation={0}>
