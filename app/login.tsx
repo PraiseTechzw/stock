@@ -204,13 +204,6 @@ export default function LoginScreen() {
         }
     };
 
-    const resetFlow = () => {
-        setStep('identify');
-        setFoundUser(null);
-        setPassword('');
-        setError('');
-    };
-
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
