@@ -97,6 +97,7 @@ function RootLayoutNav() {
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <AuthProtectedRoute>
             <Stack screenOptions={{
+              headerShown: false,
               headerStyle: {
                 backgroundColor: paperTheme.colors.surface,
               },

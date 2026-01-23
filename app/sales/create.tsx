@@ -4,6 +4,7 @@ import { useProducts } from '@/src/hooks/useProducts';
 import { SaleItem, useSales } from '@/src/hooks/useSales';
 import { useStock } from '@/src/hooks/useStock';
 import {
+    ArrowLeft02Icon,
     Calendar02Icon,
     CheckmarkCircle01Icon,
     CheckmarkCircle02Icon,
@@ -15,12 +16,13 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Print from 'expo-print';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Card, Dialog, Divider, List, Portal, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
-import Animated, { ScaleIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function QuickSaleScreen() {
@@ -156,8 +158,18 @@ export default function QuickSaleScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: 'Quick Street Sale' }} />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>Quick Sale</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>New Transaction</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
             {step === 1 ? (
                 // --- STEP 1: FAST PRODUCT PICKER ---
@@ -187,65 +199,68 @@ export default function QuickSaleScreen() {
                         numColumns={2}
                         columnWrapperStyle={styles.gridRow}
                         contentContainerStyle={styles.gridContainer}
-                        renderItem={({ item }) => {
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item, index }) => {
                             const cartItem = cart.find(i => i.productId === item.id);
                             return (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.productCard,
-                                        { backgroundColor: theme.colors.surface },
-                                        cartItem && { borderColor: theme.colors.primary, borderWidth: 2 }
-                                    ]}
-                                    onPress={() => addToCart(item)}
-                                >
-                                    {item.isFavorite && (
-                                        <View style={styles.favoriteBadge}>
-                                            <HugeiconsIcon icon={StarIcon} size={12} color="#ffd700" />
-                                        </View>
-                                    )}
-                                    {cartItem && (
-                                        <View style={styles.selectedTick}>
-                                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color={theme.colors.primary} />
-                                        </View>
-                                    )}
-                                    <View style={styles.imageBox}>
-                                        {item.imageUri ? (
-                                            <Image source={{ uri: item.imageUri }} style={styles.productImage} />
-                                        ) : (
-                                            <View style={[styles.pIconBg, { backgroundColor: theme.colors.primaryContainer + '40' }]}>
-                                                <HugeiconsIcon icon={PackageIcon} size={32} color={theme.colors.primary} />
+                                <Animated.View entering={FadeInDown.delay(index * 50)}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.productCard,
+                                            { backgroundColor: theme.colors.surface },
+                                            cartItem && { borderColor: theme.colors.primary, borderWidth: 2 }
+                                        ]}
+                                        onPress={() => addToCart(item)}
+                                    >
+                                        {item.isFavorite && (
+                                            <View style={styles.favoriteBadge}>
+                                                <HugeiconsIcon icon={StarIcon} size={12} color="#ffd700" />
                                             </View>
                                         )}
-                                    </View>
-                                    <Text variant="labelLarge" numberOfLines={1} style={styles.pName}>{item.name}</Text>
-                                    <Text variant="bodyLarge" style={{ fontWeight: '900', color: theme.colors.primary }}>${item.sellingPrice}</Text>
-
-                                    <View style={styles.stockStatus}>
-                                        <Text variant="labelSmall" style={{ color: item.totalQuantity > 5 ? theme.colors.outline : theme.colors.error, fontWeight: '700' }}>
-                                            {item.totalQuantity > 0 ? `${item.totalQuantity} in stock` : 'Out of Stock'}
-                                        </Text>
-                                    </View>
-
-                                    {cartItem && (
-                                        <View style={styles.cardActions}>
-                                            <TouchableOpacity
-                                                onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
-                                                style={[styles.smallActionBtn, { backgroundColor: theme.colors.surfaceVariant }]}
-                                            >
-                                                <Text style={{ fontWeight: 'bold', fontSize: 18 }}>-</Text>
-                                            </TouchableOpacity>
-                                            <View style={styles.qtyBadge}>
-                                                <Text style={{ fontWeight: 'bold' }}>{cartItem.quantity}</Text>
+                                        {cartItem && (
+                                            <View style={styles.selectedTick}>
+                                                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color={theme.colors.primary} />
                                             </View>
-                                            <TouchableOpacity
-                                                onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }}
-                                                style={[styles.smallActionBtn, { backgroundColor: theme.colors.primary }]}
-                                            >
-                                                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#fff' }}>+</Text>
-                                            </TouchableOpacity>
+                                        )}
+                                        <View style={styles.imageBox}>
+                                            {item.imageUri ? (
+                                                <Image source={{ uri: item.imageUri }} style={styles.productImage} />
+                                            ) : (
+                                                <View style={[styles.pIconBg, { backgroundColor: theme.colors.primaryContainer + '40' }]}>
+                                                    <HugeiconsIcon icon={PackageIcon} size={32} color={theme.colors.primary} />
+                                                </View>
+                                            )}
                                         </View>
-                                    )}
-                                </TouchableOpacity>
+                                        <Text variant="labelLarge" numberOfLines={1} style={styles.pName}>{item.name}</Text>
+                                        <Text variant="bodyLarge" style={{ fontWeight: '900', color: theme.colors.primary }}>${item.sellingPrice}</Text>
+
+                                        <View style={styles.stockStatus}>
+                                            <Text variant="labelSmall" style={{ color: item.totalQuantity > 5 ? theme.colors.outline : theme.colors.error, fontWeight: '700' }}>
+                                                {item.totalQuantity > 0 ? `${item.totalQuantity} in stock` : 'Out of Stock'}
+                                            </Text>
+                                        </View>
+
+                                        {cartItem && (
+                                            <View style={styles.cardActions}>
+                                                <TouchableOpacity
+                                                    onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
+                                                    style={[styles.smallActionBtn, { backgroundColor: theme.colors.surfaceVariant }]}
+                                                >
+                                                    <Text style={{ fontWeight: 'bold', fontSize: 18 }}>-</Text>
+                                                </TouchableOpacity>
+                                                <View style={styles.qtyBadge}>
+                                                    <Text style={{ fontWeight: 'bold' }}>{cartItem.quantity}</Text>
+                                                </View>
+                                                <TouchableOpacity
+                                                    onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }}
+                                                    style={[styles.smallActionBtn, { backgroundColor: theme.colors.primary }]}
+                                                >
+                                                    <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#fff' }}>+</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                </Animated.View>
                             );
                         }}
                     />
@@ -411,7 +426,7 @@ export default function QuickSaleScreen() {
 
             <Portal>
                 <Dialog visible={successVisible} dismissable={false} style={{ borderRadius: 32, alignItems: 'center', paddingVertical: 20 }}>
-                    <Animated.View entering={ScaleIn.duration(600)}>
+                    <Animated.View entering={FadeIn}>
                         <Surface style={[styles.successIcon, { backgroundColor: '#10b981' }]} elevation={4}>
                             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={48} color="#fff" />
                         </Surface>
@@ -451,13 +466,36 @@ export default function QuickSaleScreen() {
                     </View>
                 </Dialog>
             </Portal>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
     },
     topBar: {
         flexDirection: 'row',

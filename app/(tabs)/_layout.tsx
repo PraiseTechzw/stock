@@ -37,6 +37,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <HugeiconsIcon icon={DashboardSquare01Icon} color={color} size={size} />,
         }}
       />
@@ -51,6 +52,7 @@ export default function TabLayout() {
         name="sales"
         options={{
           title: 'Sales',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <HugeiconsIcon icon={ShoppingCart01Icon} color={color} size={size} />,
         }}
       />

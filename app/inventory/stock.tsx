@@ -36,9 +36,7 @@ export default function StockManagementScreen() {
     }, [locations]);
 
     const handleAdjust = async () => {
-        console.log('handleAdjust called with:', { form, productId });
         if (!form.locationId || !form.quantity || !productId) {
-            console.log('handleAdjust returning early due to missing data');
             return;
         }
         try {

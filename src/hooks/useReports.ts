@@ -1,4 +1,4 @@
-import { ShoppingBag01Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
+import { PackageIcon, ShoppingBag01Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
 import { isAfter, parseISO, startOfDay, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
@@ -13,6 +13,13 @@ export const useReports = (filter: ReportFilter = 'all') => {
     const { data: allProducts } = useLiveQuery(db.select().from(products));
     const { data: allExpensesData } = useLiveQuery(db.select().from(expensesTable));
     const { data: allStockLevels } = useLiveQuery(db.select().from(stockLevels));
+
+    console.log('[useReports] Data Status:', {
+        sales: allSales?.length,
+        items: allSalesItems?.length,
+        products: allProducts?.length,
+        expenses: allExpensesData?.length,
+    });
 
     const getFilterDate = (range: ReportFilter) => {
         const now = new Date();
@@ -118,31 +125,79 @@ export const useReports = (filter: ReportFilter = 'all') => {
 
     // Recent Activity Feed
     const recentActivities = useMemo(() => {
-        if (!allSales || !allExpensesData) return [];
+        const activities: any[] = [];
 
-        const activities: any[] = [
-            ...allSales.map(s => ({
-                id: `sale-${s.id}`,
-                type: 'sale',
-                title: 'New Sale',
-                subtitle: `$${s.totalAmount?.toFixed(2)}`,
-                date: s.created_at ? parseISO(s.created_at.replace(' ', 'T')) : new Date(),
-                icon: ShoppingBag01Icon,
-            })),
-            ...allExpensesData.map(e => ({
-                id: `expense-${e.id}`,
-                type: 'expense',
-                title: 'Expense Recorded',
-                subtitle: `${e.category}: -$${e.amount.toFixed(2)}`,
-                date: parseISO(e.date),
-                icon: Wallet01Icon,
-            }))
-        ];
+        if (allSales) {
+            allSales.forEach(s => {
+                let date: Date;
+                if (s.created_at) {
+                    const isoStr = s.created_at.includes('T') ? s.created_at : s.created_at.replace(' ', 'T');
+                    date = parseISO(isoStr);
+                    if (isNaN(date.getTime())) date = new Date();
+                } else {
+                    date = new Date();
+                }
 
-        return activities
-            .sort((a, b) => b.date.getTime() - a.date.getTime())
+                activities.push({
+                    id: `sale-${s.id}`,
+                    type: 'sale',
+                    title: 'New Sale',
+                    subtitle: `$${s.totalAmount?.toFixed(2)}`,
+                    date,
+                    icon: ShoppingBag01Icon,
+                });
+            });
+        }
+
+        if (allExpensesData) {
+            allExpensesData.forEach(e => {
+                let date = parseISO(e.date);
+                if (isNaN(date.getTime())) date = new Date();
+
+                activities.push({
+                    id: `expense-${e.id}`,
+                    type: 'expense',
+                    title: 'Expense Recorded',
+                    subtitle: `${e.category}: -$${e.amount.toFixed(2)}`,
+                    date,
+                    icon: Wallet01Icon,
+                });
+            });
+        }
+
+        if (allProducts) {
+            allProducts.forEach(p => {
+                let date: Date;
+                if (p.created_at) {
+                    const isoStr = p.created_at.includes('T') ? p.created_at : p.created_at.replace(' ', 'T');
+                    date = parseISO(isoStr);
+                    if (isNaN(date.getTime())) date = new Date();
+                } else {
+                    date = new Date();
+                }
+
+                activities.push({
+                    id: `product-${p.id}`,
+                    type: 'product',
+                    title: 'Product Added',
+                    subtitle: p.name,
+                    date,
+                    icon: PackageIcon,
+                });
+            });
+        }
+
+        const sorted = activities
+            .sort((a, b) => {
+                const bTime = isNaN(b.date.getTime()) ? 0 : b.date.getTime();
+                const aTime = isNaN(a.date.getTime()) ? 0 : a.date.getTime();
+                return bTime - aTime;
+            })
             .slice(0, 5);
-    }, [allSales, allExpensesData]);
+
+        console.log('[useReports] Generated activities:', sorted.length);
+        return sorted;
+    }, [allSales, allExpensesData, allProducts]);
 
     return {
         metrics: financialMetrics,

@@ -11,6 +11,7 @@ interface SalesOrderItemProps {
     totalAmount: number;
     paymentStatus?: 'paid' | 'partial' | 'credit';
     date?: string;
+    onPress?: () => void;
 }
 
 export const SalesOrderItem: React.FC<SalesOrderItemProps> = ({
@@ -18,7 +19,8 @@ export const SalesOrderItem: React.FC<SalesOrderItemProps> = ({
     customerName,
     totalAmount,
     paymentStatus = 'paid',
-    date
+    date,
+    onPress
 }) => {
     const router = useRouter();
     const theme = useTheme();
@@ -43,7 +45,7 @@ export const SalesOrderItem: React.FC<SalesOrderItemProps> = ({
         <Surface elevation={1} style={styles.surface}>
             <Card
                 style={styles.card}
-                onPress={() => router.push(`/sales/${orderId}` as any)}
+                onPress={onPress || (() => router.push(`/sales/${orderId}` as any))}
             >
                 <View style={styles.cardInner}>
                     <View style={styles.leftInfo}>
