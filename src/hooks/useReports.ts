@@ -71,6 +71,12 @@ export const useReports = (filter: ReportFilter = 'all') => {
             return currentStock < (p.minStockLevel || 0);
         }).length;
 
+        // INNOVATIVE: Business Health Score (0-100)
+        // Based on Margin, Revenue Presence, and Stock Levels
+        const marginScore = Math.min(Math.max(netProfit > 0 ? (netProfit / totalRevenue) * 50 : 0, 0), 50);
+        const stockScore = allProducts.length > 0 ? ((allProducts.length - lowStockCount) / allProducts.length) * 50 : 0;
+        const healthScore = Math.round(marginScore + stockScore);
+
         return {
             totalRevenue,
             cogs,
@@ -81,6 +87,7 @@ export const useReports = (filter: ReportFilter = 'all') => {
             margin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
             totalProducts: allProducts.filter(p => p.isActive).length,
             lowStockCount,
+            healthScore,
         };
     }, [allSales, allSalesItems, allProducts, allExpensesData, allStockLevels, filter]);
 

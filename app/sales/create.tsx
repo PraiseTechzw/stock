@@ -225,6 +225,26 @@ export default function QuickSaleScreen() {
                                             {item.totalQuantity > 0 ? `${item.totalQuantity} in stock` : 'Out of Stock'}
                                         </Text>
                                     </View>
+
+                                    {cartItem && (
+                                        <View style={styles.cardActions}>
+                                            <TouchableOpacity
+                                                onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
+                                                style={[styles.smallActionBtn, { backgroundColor: theme.colors.surfaceVariant }]}
+                                            >
+                                                <Text style={{ fontWeight: 'bold', fontSize: 18 }}>-</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.qtyBadge}>
+                                                <Text style={{ fontWeight: 'bold' }}>{cartItem.quantity}</Text>
+                                            </View>
+                                            <TouchableOpacity
+                                                onPress={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }}
+                                                style={[styles.smallActionBtn, { backgroundColor: theme.colors.primary }]}
+                                            >
+                                                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#fff' }}>+</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                             );
                         }}
@@ -720,5 +740,22 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         height: 48,
         justifyContent: 'center',
+    },
+    cardActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        gap: 8,
+    },
+    smallActionBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qtyBadge: {
+        minWidth: 20,
+        alignItems: 'center',
     },
 });
