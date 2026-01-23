@@ -2,6 +2,7 @@ import { FadeView } from '@/src/components/ui/FadeView';
 import { db } from '@/src/db/DatabaseProvider';
 import { users } from '@/src/db/schema';
 import { useAuth } from '@/src/hooks/useAuth';
+import { useSystem } from '@/src/hooks/useSystem';
 import {
     CircleLock02FreeIcons,
     UserIcon,
@@ -20,7 +21,7 @@ import {
     ScrollView,
     StyleSheet,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import {
     Button,
@@ -44,6 +45,7 @@ export default function LoginScreen() {
     const router = useRouter();
     const loginAuth = useAuth(state => state.login);
 
+    const { importDatabase } = useSystem();
     const [step, setStep] = useState<AuthStep>('identify');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -330,7 +332,7 @@ export default function LoginScreen() {
                                 <Button
                                     mode="outlined"
                                     icon={() => <HugeiconsIcon icon={LeftToRightListDashIcon} size={18} color={theme.colors.onSurface} />}
-                                    onPress={() => { }}
+                                    onPress={importDatabase}
                                     style={styles.input}
                                 >
                                     Import db.sqlite
