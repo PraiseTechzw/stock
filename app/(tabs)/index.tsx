@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Avatar, Badge, Button, Divider, List, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { Avatar, Badge, Button, Divider, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 
 import { Can } from '@/src/components/auth/Can';
 import { AIInsights } from '@/src/components/ui/AIInsights';
@@ -21,6 +21,11 @@ export default function DashboardScreen() {
   const [filter, setFilter] = useState<ReportFilter>('all');
   const { lowStockProducts } = useStock();
   const { metrics, salesByCategory, recentActivities, isLoading } = useReports(filter);
+
+  console.log('[Dashboard] recentActivities:', recentActivities.length);
+  if (recentActivities.length > 0) {
+    console.log('[Dashboard] First Activity:', JSON.stringify(recentActivities[0]));
+  }
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const { storeName } = useSettingsStore();
@@ -150,32 +155,49 @@ export default function DashboardScreen() {
 
         <SectionHeader title="Recent Activity" />
         {recentActivities.length > 0 ? (
-          <View style={[styles.activityList, { backgroundColor: theme.colors.surface }]}>
-            {recentActivities.map((activity: any, index: number) => (
-              <React.Fragment key={activity.id}>
-                <List.Item
-                  title={activity.title}
-                  description={activity.subtitle}
-                  left={props => (
-                    <View style={[styles.activityIconBox, { backgroundColor: activity.type === 'sale' ? '#ecfdf5' : '#fff1f2' }]}>
+          <View style={[styles.activityList, { backgroundColor: theme.colors.surface, padding: 4 }]}>
+            {recentActivities.map((activity: any, index: number) => {
+              const isSale = activity.type === 'sale';
+              const isExpense = activity.type === 'expense';
+              const isProduct = activity.type === 'product';
+
+              const bgColor = isSale ? '#ecfdf5' : isExpense ? '#fff1f2' : '#f5f3ff';
+              const iconColor = isSale ? '#10b981' : isExpense ? '#f43f5e' : '#8b5cf6';
+
+              return (
+                <View key={activity.id}>
+                  <TouchableOpacity
+                    style={styles.customActivityRow}
+                    onPress={() => {
+                      if (isSale) router.push(`/sales/${activity.id.replace('sale-', '')}`);
+                      if (isProduct) router.push('/(tabs)/inventory');
+                    }}
+                  >
+                    <View style={[styles.activityIconBox, { backgroundColor: bgColor }]}>
                       <HugeiconsIcon
                         icon={activity.icon}
                         size={20}
-                        color={activity.type === 'sale' ? '#10b981' : '#f43f5e'}
+                        color={iconColor}
                       />
                     </View>
-                  )}
-                  right={props => (
-                    <Text variant="bodySmall" style={styles.activityDate}>
-                      {activity.date.toLocaleDateString()}
-                    </Text>
-                  )}
-                  titleStyle={styles.activityTitle}
-                  style={styles.activityItem}
-                />
-                {index < recentActivities.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
+                    <View style={styles.activityInfo}>
+                      <Text variant="titleSmall" style={{ color: '#fff', fontWeight: 'bold' }}>
+                        {activity.title || 'Activity'}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
+                        {activity.subtitle || ''}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text variant="bodySmall" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
+                        {activity.date instanceof Date ? activity.date.toLocaleDateString() : 'Now'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                  {index < recentActivities.length - 1 && <Divider style={{ opacity: 0.1, marginHorizontal: 16 }} />}
+                </View>
+              );
+            })}
           </View>
         ) : (
           <View style={[styles.placeholder, { backgroundColor: theme.colors.surface, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: theme.colors.outlineVariant }]}>
@@ -283,5 +305,15 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     marginRight: 12,
     alignSelf: 'center',
+  },
+  customActivityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  activityInfo: {
+    flex: 1,
+    marginLeft: 12,
   },
 });

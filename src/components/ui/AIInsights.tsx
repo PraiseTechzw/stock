@@ -70,7 +70,7 @@ export const AIInsights = ({ metrics }: AIInsightsProps) => {
                 {insights.map((insight, index) => (
                     <Animated.View
                         key={index}
-                        entering={FadeInRight.delay(index * 200).duration(600)}
+                        entering={FadeInRight}
                     >
                         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
                             <Card.Content style={styles.cardContent}>

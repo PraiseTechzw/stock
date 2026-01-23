@@ -17,11 +17,14 @@ export const useStock = () => {
     };
 
     const adjustStock = async (productId: number, locationId: number, quantity: number, reason: string) => {
+        console.log(`[useStock] Adjusting: Pid=${productId}, Loc=${locationId}, Qty=${quantity}`);
         try {
-            const existing = await db.select()
+            const results = await db.select()
                 .from(stockLevels)
-                .where(and(eq(stockLevels.productId, productId), eq(stockLevels.locationId, locationId)))
-                .get();
+                .where(and(eq(stockLevels.productId, productId), eq(stockLevels.locationId, locationId)));
+
+            const existing = results[0];
+            console.log('[useStock] Existing record:', existing);
 
             if (existing) {
                 await db.update(stockLevels)
@@ -30,12 +33,14 @@ export const useStock = () => {
                         updated_at: new Date().toISOString()
                     })
                     .where(eq(stockLevels.id, existing.id));
+                console.log('[useStock] Updated existing');
             } else {
                 await db.insert(stockLevels).values({
                     productId,
                     locationId,
                     quantity,
                 });
+                console.log('[useStock] Inserted new');
             }
             // logic for logging the adjustment in a history table could go here
         } catch (error) {

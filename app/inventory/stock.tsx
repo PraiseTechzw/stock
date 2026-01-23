@@ -4,7 +4,7 @@ import { PackageIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
@@ -15,8 +15,9 @@ export default function StockManagementScreen() {
     const router = useRouter();
     const theme = useTheme();
 
-    const product = products.find((p) => p.id === parseInt(id));
-    const { data: stockLevels } = getStockForProduct(parseInt(id));
+    const productId = typeof id === 'string' ? parseInt(id, 10) : 0;
+    const product = products.find((p) => p.id === productId);
+    const { data: stockLevels } = getStockForProduct(productId);
 
     const [mode, setMode] = useState('adjust'); // adjust, transfer
     const [form, setForm] = useState({
@@ -27,11 +28,22 @@ export default function StockManagementScreen() {
         reason: '',
     });
 
+    // Auto-select first location when loaded
+    React.useEffect(() => {
+        if (locations && locations.length > 0 && !form.locationId) {
+            setForm(prev => ({ ...prev, locationId: locations[0].id.toString() }));
+        }
+    }, [locations]);
+
     const handleAdjust = async () => {
-        if (!form.locationId || !form.quantity) return;
+        console.log('handleAdjust called with:', { form, productId });
+        if (!form.locationId || !form.quantity || !productId) {
+            console.log('handleAdjust returning early due to missing data');
+            return;
+        }
         try {
             await adjustStock(
-                parseInt(id),
+                productId,
                 parseInt(form.locationId),
                 parseInt(form.quantity),
                 form.reason || 'Manual Adjustment'
@@ -55,10 +67,10 @@ export default function StockManagementScreen() {
     };
 
     const handleTransfer = async () => {
-        if (!form.fromLocationId || !form.toLocationId || !form.quantity) return;
+        if (!form.fromLocationId || !form.toLocationId || !form.quantity || !productId) return;
         try {
             await transferStock(
-                parseInt(id),
+                productId,
                 parseInt(form.fromLocationId),
                 parseInt(form.toLocationId),
                 parseInt(form.quantity)
@@ -84,10 +96,14 @@ export default function StockManagementScreen() {
     if (!product) return null;
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: `Stock Control` }} />
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={[styles.container, { backgroundColor: theme.colors.background }]}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        >
+            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+                <Stack.Screen options={{ title: `Stock Control` }} />
 
-            <View style={styles.content}>
                 <View style={styles.header}>
                     <Text variant="headlineSmall" style={styles.productTitle}>{product.name}</Text>
                     <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>Real-time stock management</Text>
@@ -129,6 +145,11 @@ export default function StockManagementScreen() {
                         <>
                             <Text variant="labelLarge" style={styles.inputLabel}>CHOOSE STORAGE LOCATION</Text>
                             <View style={styles.chipRow}>
+                                {locations.length === 0 && (
+                                    <Text style={{ color: theme.colors.error, fontStyle: 'italic' }}>
+                                        No locations found. (Database might be initializing)
+                                    </Text>
+                                )}
                                 {locations.map((loc) => (
                                     <TouchableOpacity
                                         key={loc.id}
@@ -241,8 +262,8 @@ export default function StockManagementScreen() {
                         </View>
                     )}
                 </Surface>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -251,6 +272,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    scrollContent: {
         padding: 20,
         paddingBottom: 40,
     },
