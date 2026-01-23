@@ -1,8 +1,11 @@
 import { useStock } from '@/src/hooks/useStock';
-import { Stack, useRouter } from 'expo-router';
+import { Alert01Icon, ArrowLeft02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Avatar, Card, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LowStockScreen() {
     const { lowStockProducts } = useStock();
@@ -13,6 +16,7 @@ export default function LowStockScreen() {
         <Card
             style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.error }]}
             onPress={() => router.push(`/inventory/${item.id}`)}
+            elevation={1}
         >
             <Card.Title
                 title={item.name}
@@ -42,27 +46,38 @@ export default function LowStockScreen() {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: 'Critical Alerts' }} />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>Critical Alerts</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>{lowStockProducts.length} items low on stock</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             <FlatList
                 data={lowStockProducts}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderProduct}
                 contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Avatar.Icon
-                            icon="check-circle"
-                            size={80}
-                            style={{ backgroundColor: theme.colors.primaryContainer }}
-                            color={theme.colors.primary}
-                        />
-                        <Text variant="titleMedium" style={[styles.emptyText, { color: theme.colors.onSurface }]}>All Stock Levels Stable</Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>No items are currently below minimum levels.</Text>
+                        <View style={styles.successCircle}>
+                            <HugeiconsIcon icon={Alert01Icon} size={48} color={theme.colors.primary} />
+                        </View>
+                        <Text variant="headlineSmall" style={[styles.emptyText, { color: theme.colors.onSurface }]}>All Levels Stable</Text>
+                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 8 }}>
+                            Great! No items are currently below their minimum threshold.
+                        </Text>
                     </View>
                 }
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -70,14 +85,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
+    },
     listContent: {
-        padding: 16,
+        padding: 20,
         paddingBottom: 40,
     },
     card: {
         marginBottom: 16,
-        borderRadius: 16,
-        elevation: 2,
+        borderRadius: 24,
         borderLeftWidth: 6,
     },
     alertIndicator: {
@@ -88,8 +125,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 40,
     },
+    successCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
     emptyText: {
-        marginTop: 20,
-        fontWeight: 'bold',
+        fontWeight: '900',
+        letterSpacing: -0.5,
     },
 });

@@ -1,12 +1,13 @@
 import { BarcodeScannerModal } from '@/src/components/BarcodeScannerModal';
 import { useProducts } from '@/src/hooks/useProducts';
-import { Camera01Icon, Delete02Icon, Image01FreeIcons, Image01Icon, QrCode01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft02Icon, Camera01Icon, Delete02Icon, Image01FreeIcons, Image01Icon, QrCode01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, HelperText, IconButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function AddProductScreen() {
@@ -24,7 +25,7 @@ export default function AddProductScreen() {
         barcode: '',
         imageUri: '',
         categoryId: '',
-        minStockLevel: '5', // Default alert at 5 units
+        minStockLevel: '5',
     });
 
     const pickImage = async () => {
@@ -76,8 +77,6 @@ export default function AddProductScreen() {
                 type: 'success',
                 text1: 'Product Created',
                 text2: `${form.name} has been added to inventory.`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             router.back();
@@ -87,161 +86,179 @@ export default function AddProductScreen() {
                 type: 'error',
                 text1: 'Save Failed',
                 text2: 'Could not create product. Please try again.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.container, { backgroundColor: theme.colors.background }]}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-        >
-            <ScrollView
-                style={styles.container}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.form}>
-                    <Surface style={[styles.imageContainer, { backgroundColor: theme.colors.surfaceVariant }]} elevation={0}>
-                        {form.imageUri ? (
-                            <>
-                                <Image source={{ uri: form.imageUri }} style={styles.image} />
-                                <IconButton
-                                    icon={() => <HugeiconsIcon icon={Delete02Icon} size={20} color="#fff" />}
-                                    style={styles.removeImage}
-                                    onPress={() => setForm({ ...form, imageUri: '' })}
-                                />
-                            </>
-                        ) : (
-                            <View style={styles.placeholder}>
-                                <HugeiconsIcon icon={Image01Icon} size={48} color={theme.colors.outline} />
-                                <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                                    No Product Image
-                                </Text>
-                            </View>
-                        )}
-                    </Surface>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>New Product</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>Add to catalog</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
-                    <View style={styles.imageActions}>
-                        <Button
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.form}>
+                        <Surface style={[styles.imageContainer, { backgroundColor: theme.colors.surfaceVariant + '40' }]} elevation={0}>
+                            {form.imageUri ? (
+                                <>
+                                    <Image source={{ uri: form.imageUri }} style={styles.image} />
+                                    <IconButton
+                                        icon={() => <HugeiconsIcon icon={Delete02Icon} size={20} color="#fff" />}
+                                        style={styles.removeImage}
+                                        onPress={() => setForm({ ...form, imageUri: '' })}
+                                    />
+                                </>
+                            ) : (
+                                <View style={styles.placeholder}>
+                                    <HugeiconsIcon icon={Image01Icon} size={48} color={theme.colors.outline} />
+                                    <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+                                        No Product Image
+                                    </Text>
+                                </View>
+                            )}
+                        </Surface>
+
+                        <View style={styles.imageActions}>
+                            <Button
+                                mode="outlined"
+                                onPress={pickImage}
+                                icon={() => <HugeiconsIcon icon={Image01FreeIcons} size={18} color={theme.colors.primary} />}
+                                style={styles.actionBtn}
+                            >
+                                Gallery
+                            </Button>
+                            <Button
+                                mode="contained"
+                                onPress={takePhoto}
+                                icon={() => <HugeiconsIcon icon={Camera01Icon} size={18} color="#fff" />}
+                                style={styles.actionBtn}
+                            >
+                                Camera
+                            </Button>
+                        </View>
+
+                        <TextInput
+                            label="SKU / Item Code *"
                             mode="outlined"
-                            onPress={pickImage}
-                            icon={() => <HugeiconsIcon icon={Image01FreeIcons} size={18} color={theme.colors.primary} />}
-                            style={styles.actionBtn}
-                        >
-                            Gallery
-                        </Button>
+                            value={form.sku}
+                            onChangeText={(text) => setForm({ ...form, sku: text })}
+                            style={styles.input}
+                            outlineStyle={{ borderRadius: 16 }}
+                            activeOutlineColor={theme.colors.primary}
+                        />
+                        <TextInput
+                            label="Product Name *"
+                            mode="outlined"
+                            value={form.name}
+                            onChangeText={(text) => setForm({ ...form, name: text })}
+                            style={styles.input}
+                            outlineStyle={{ borderRadius: 16 }}
+                            activeOutlineColor={theme.colors.primary}
+                        />
+                        <TextInput
+                            label="Description"
+                            mode="outlined"
+                            value={form.description}
+                            onChangeText={(text) => setForm({ ...form, description: text })}
+                            multiline
+                            numberOfLines={3}
+                            style={styles.input}
+                            outlineStyle={{ borderRadius: 16 }}
+                            activeOutlineColor={theme.colors.primary}
+                        />
+
+                        <View style={styles.row}>
+                            <TextInput
+                                label="Cost Price"
+                                mode="outlined"
+                                value={form.costPrice}
+                                onChangeText={(text) => setForm({ ...form, costPrice: text })}
+                                keyboardType="numeric"
+                                style={[styles.input, { flex: 1, marginRight: 8 }]}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor={theme.colors.primary}
+                            />
+                            <TextInput
+                                label="Selling Price"
+                                mode="outlined"
+                                value={form.sellingPrice}
+                                onChangeText={(text) => setForm({ ...form, sellingPrice: text })}
+                                keyboardType="numeric"
+                                style={[styles.input, { flex: 1 }]}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor={theme.colors.primary}
+                            />
+                        </View>
+
+                        <View>
+                            <TextInput
+                                label="Low Stock Alert Alert Level"
+                                mode="outlined"
+                                value={form.minStockLevel}
+                                onChangeText={(text) => setForm({ ...form, minStockLevel: text })}
+                                keyboardType="numeric"
+                                style={styles.input}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor={theme.colors.primary}
+                            />
+                            <HelperText type="info" visible={true} style={{ marginTop: -8, marginBottom: 8 }}>
+                                We'll alert you when stock levels fall below this.
+                            </HelperText>
+                        </View>
+
+                        <View style={[styles.row, { marginBottom: 24 }]}>
+                            <TextInput
+                                label="Barcode"
+                                mode="outlined"
+                                value={form.barcode}
+                                onChangeText={(text) => setForm({ ...form, barcode: text })}
+                                style={[styles.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
+                                outlineStyle={{ borderRadius: 16 }}
+                                activeOutlineColor={theme.colors.primary}
+                            />
+                            <IconButton
+                                icon={() => <HugeiconsIcon icon={QrCode01Icon} size={24} color={theme.colors.primary} />}
+                                onPress={() => setScannerVisible(true)}
+                                style={{ backgroundColor: theme.colors.primaryContainer, borderRadius: 12, margin: 0, height: 56, width: 56 }}
+                            />
+                        </View>
+
+                        <BarcodeScannerModal
+                            visible={scannerVisible}
+                            onClose={() => setScannerVisible(false)}
+                            onScan={(data) => setForm({ ...form, barcode: data, sku: form.sku || data })}
+                        />
+
                         <Button
                             mode="contained"
-                            onPress={takePhoto}
-                            icon={() => <HugeiconsIcon icon={Camera01Icon} size={18} color="#fff" />}
-                            style={styles.actionBtn}
+                            onPress={handleSave}
+                            style={styles.saveButton}
+                            contentStyle={styles.saveButtonContent}
+                            disabled={!form.sku || !form.name}
                         >
-                            Camera
+                            Save Product
                         </Button>
                     </View>
-
-                    <TextInput
-                        label="SKU *"
-                        mode="outlined"
-                        value={form.sku}
-                        onChangeText={(text) => setForm({ ...form, sku: text })}
-                        style={styles.input}
-                        activeOutlineColor={theme.colors.primary}
-                    />
-                    <TextInput
-                        label="Product Name *"
-                        mode="outlined"
-                        value={form.name}
-                        onChangeText={(text) => setForm({ ...form, name: text })}
-                        style={styles.input}
-                        activeOutlineColor={theme.colors.primary}
-                    />
-                    <TextInput
-                        label="Description"
-                        mode="outlined"
-                        value={form.description}
-                        onChangeText={(text) => setForm({ ...form, description: text })}
-                        multiline
-                        numberOfLines={3}
-                        style={styles.input}
-                        activeOutlineColor={theme.colors.primary}
-                    />
-
-                    <View style={styles.row}>
-                        <TextInput
-                            label="Cost Price"
-                            mode="outlined"
-                            value={form.costPrice}
-                            onChangeText={(text) => setForm({ ...form, costPrice: text })}
-                            keyboardType="numeric"
-                            style={[styles.input, { flex: 1, marginRight: 8 }]}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <TextInput
-                            label="Selling Price"
-                            mode="outlined"
-                            value={form.sellingPrice}
-                            onChangeText={(text) => setForm({ ...form, sellingPrice: text })}
-                            keyboardType="numeric"
-                            style={[styles.input, { flex: 1 }]}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                    </View>
-
-                    <View>
-                        <TextInput
-                            label="Low Stock Alert Level (Units)"
-                            mode="outlined"
-                            value={form.minStockLevel}
-                            onChangeText={(text) => setForm({ ...form, minStockLevel: text })}
-                            keyboardType="numeric"
-                            style={styles.input}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <HelperText type="info" visible={true} style={{ marginTop: -8, marginBottom: 8 }}>
-                            Notify me when stock falls below this number
-                        </HelperText>
-                    </View>
-
-                    <View style={styles.row}>
-                        <TextInput
-                            label="Barcode"
-                            mode="outlined"
-                            value={form.barcode}
-                            onChangeText={(text) => setForm({ ...form, barcode: text })}
-                            style={[styles.input, { flex: 1, marginRight: 8 }]}
-                            activeOutlineColor={theme.colors.primary}
-                        />
-                        <IconButton
-                            icon={() => <HugeiconsIcon icon={QrCode01Icon} size={24} color={theme.colors.primary} />}
-                            onPress={() => setScannerVisible(true)}
-                            style={{ marginTop: 8, backgroundColor: theme.colors.primaryContainer }}
-                        />
-                    </View>
-
-                    <BarcodeScannerModal
-                        visible={scannerVisible}
-                        onClose={() => setScannerVisible(false)}
-                        onScan={(data) => setForm({ ...form, barcode: data, sku: form.sku || data })}
-                    />
-
-                    <Button
-                        mode="contained"
-                        onPress={handleSave}
-                        style={styles.saveButton}
-                        contentStyle={styles.saveButtonContent}
-                        disabled={!form.sku || !form.name}
-                    >
-                        Create Product
-                    </Button>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -249,12 +266,35 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    form: {
-        padding: 20,
-        paddingBottom: 40,
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
     },
     scrollContent: {
         flexGrow: 1,
+    },
+    form: {
+        padding: 20,
+        paddingBottom: 40,
     },
     imageContainer: {
         width: '100%',
@@ -262,19 +302,18 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         marginBottom: 16,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: 'rgba(0,0,0,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     image: {
         width: '100%',
         height: '100%',
     },
     placeholder: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderRadius: 24,
-        borderStyle: 'dashed',
-        borderColor: 'rgba(0,0,0,0.1)',
     },
     removeImage: {
         position: 'absolute',
@@ -284,25 +323,24 @@ const styles = StyleSheet.create({
     },
     imageActions: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 12,
         marginBottom: 24,
     },
     actionBtn: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 16,
     },
     input: {
         marginBottom: 16,
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     saveButton: {
-        marginTop: 16,
         borderRadius: 16,
-        elevation: 4,
+        backgroundColor: '#6366f1',
     },
     saveButtonContent: {
         height: 56,

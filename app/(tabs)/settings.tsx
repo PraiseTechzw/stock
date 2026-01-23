@@ -11,7 +11,6 @@ import {
     Logout01Icon,
     Moon01Icon,
     Notification03Icon,
-    Share01Icon,
     Shield01Icon,
     Store01Icon,
     Sun01Icon,
@@ -23,6 +22,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Avatar, Dialog, Divider, List, Button as PaperButton, TextInput as PaperTextInput, Portal, Switch, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
     const { user, logout } = useAuth();
@@ -65,8 +65,13 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <Text variant="headlineMedium" style={styles.title}>System Settings</Text>
+                <Text variant="bodyLarge" style={styles.subtitle}>Configure your business environment</Text>
+            </View>
+
+            <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.profileSection}>
                     <Avatar.Text
                         size={80}
@@ -84,7 +89,7 @@ export default function SettingsScreen() {
 
                 <Divider style={styles.divider} />
 
-                <SectionHeader title="Theme Preferences" />
+                <SectionHeader title="Appearance" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                     <List.Item
                         title="System"
@@ -125,7 +130,7 @@ export default function SettingsScreen() {
                     />
                 </List.Section>
 
-                <SectionHeader title="Notification Settings" />
+                <SectionHeader title="Communications" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                     <List.Item
                         title="Push Notifications"
@@ -141,7 +146,7 @@ export default function SettingsScreen() {
                     />
                 </List.Section>
 
-                <SectionHeader title="Account Security" />
+                <SectionHeader title="Security" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                     <List.Item
                         title="Change Password"
@@ -161,7 +166,7 @@ export default function SettingsScreen() {
 
                 {user?.role === 'admin' && (
                     <>
-                        <SectionHeader title="System Administration" />
+                        <SectionHeader title="Administration" />
                         <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                             <List.Item
                                 title="User Management"
@@ -188,26 +193,16 @@ export default function SettingsScreen() {
                     </>
                 )}
 
-                <SectionHeader title="App Information" />
+                <SectionHeader title="About" />
                 <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                     <List.Item
-                        title="Developer & Creator"
+                        title="Developer"
                         description="Praise Masunga (@PraiseTechzw)"
                         left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={UserIcon} size={24} color={theme.colors.primary} />} />}
-                        onPress={() => Alert.alert(
-                            'About Developer',
-                            'Praise Masunga is a high-end Software Engineer specializing in React Native, Flutter, and AI solutions. \n\nFocus: Innovative, local-first inventory systems for SMEs.'
-                        )}
                     />
                     <List.Item
-                        title="Github Portfolio"
-                        description="github.com/PraiseTechzw"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Share01Icon} size={24} color={theme.colors.primary} />} />}
-                        onPress={() => Alert.alert('Portfolio', 'Visit github.com/PraiseTechzw for more innovative projects.')}
-                    />
-                    <List.Item
-                        title="Build Version"
-                        description="1.0.0-Stable (Production Ready)"
+                        title="Version"
+                        description="1.0.0 Stable"
                         left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={ComputerIcon} size={24} color={theme.colors.onSurfaceVariant} />} />}
                     />
                 </List.Section>
@@ -218,7 +213,7 @@ export default function SettingsScreen() {
                         <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
                             <List.Item
                                 title="Reset All Data"
-                                description="Permanently delete all stock and sales records"
+                                description="Permanently delete all records"
                                 left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Database01Icon} size={24} color={theme.colors.error} />} />}
                                 onPress={() => Alert.alert(
                                     'DANGER: Factory Reset',
@@ -233,11 +228,6 @@ export default function SettingsScreen() {
                         </List.Section>
                     </>
                 )}
-
-                <View style={styles.appInfo}>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Local-First Architecture | Highly Secure</Text>
-                    <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary, fontWeight: 'bold' }}>Designed & Developed by Praise Masunga</Text>
-                </View>
             </ScrollView>
 
             {exporting && (
@@ -256,7 +246,6 @@ export default function SettingsScreen() {
                             value={editValue}
                             onChangeText={setEditValue}
                             placeholder={editType === 'name' ? "Enter store name" : "Enter business address"}
-                            autoFocus
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
@@ -265,7 +254,7 @@ export default function SettingsScreen() {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -273,13 +262,26 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 20,
+    },
+    title: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        color: '#64748b',
+        marginTop: -2,
+    },
     content: {
-        padding: 16,
+        padding: 20,
         paddingBottom: 40,
     },
     profileSection: {
         alignItems: 'center',
-        marginVertical: 24,
+        marginBottom: 24,
     },
     profileName: {
         marginTop: 16,
@@ -292,15 +294,12 @@ const styles = StyleSheet.create({
         marginVertical: 16,
     },
     listSection: {
-        borderRadius: 12,
+        borderRadius: 24,
         overflow: 'hidden',
         marginBottom: 24,
         elevation: 1,
-    },
-    appInfo: {
-        alignItems: 'center',
-        marginTop: 24,
-        opacity: 0.6,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,

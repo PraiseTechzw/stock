@@ -1,21 +1,28 @@
+import { useAuth } from '@/src/hooks/useAuth';
 import { useExpenses } from '@/src/hooks/useExpenses';
+import { useNotifications } from '@/src/hooks/useNotifications';
 import { ReportFilter, useReports } from '@/src/hooks/useReports';
+import { useSettingsStore } from '@/src/store/useSettingsStore';
 import { isAfter, parseISO, startOfDay, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import * as Print from 'expo-print';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Avatar, Card, FAB, IconButton, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Avatar, Badge, Card, FAB, IconButton, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
-import { Delete02Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, Notification03Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 
 export default function FinancialsScreen() {
     const [filter, setFilter] = useState<ReportFilter>('all');
     const { expenses, isLoading: expensesLoading, deleteExpense } = useExpenses();
     const { metrics, isLoading: reportsLoading } = useReports(filter);
+    const { user } = useAuth();
+    const { unreadCount } = useNotifications();
+    const { storeName } = useSettingsStore();
     const router = useRouter();
     const theme = useTheme();
 
@@ -76,7 +83,7 @@ export default function FinancialsScreen() {
                         </div>
                         <div class="row total-row">
                             <span class="label">Gross Profit</span>
-                            <span class="value Profit"> $${metrics.grossProfit.toFixed(2)}</span>
+                            <span class="value profit"> $${metrics.grossProfit.toFixed(2)}</span>
                         </div>
                     </div>
 
@@ -158,8 +165,45 @@ export default function FinancialsScreen() {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 100 }}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <View>
+                        <Text variant="headlineMedium" style={styles.greeting}>
+                            {storeName || 'Stock Hub'}
+                        </Text>
+                        <Text variant="bodyLarge" style={styles.userName}>
+                            {user?.fullName || user?.username}
+                        </Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity
+                            onPress={() => router.push('/notifications')}
+                            style={styles.notifBtn}
+                        >
+                            <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
+                            {unreadCount > 0 && (
+                                <Badge
+                                    style={styles.notifBadge}
+                                    size={16}
+                                >
+                                    {unreadCount}
+                                </Badge>
+                            )}
+                        </TouchableOpacity>
+                        <View style={styles.avatarContainer}>
+                            <Avatar.Text
+                                size={40}
+                                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                                style={{ backgroundColor: theme.colors.primaryContainer }}
+                                color={theme.colors.primary}
+                            />
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
                 <SegmentedButtons
                     value={filter}
                     onValueChange={(v) => setFilter(v as ReportFilter)}
@@ -208,30 +252,34 @@ export default function FinancialsScreen() {
                 </Card>
 
                 <SectionHeader
-                    title="Transaction History"
-                    actionLabel="Debts (IOUs)"
-                    onAction={() => { }} // Could link to a specific debt view
+                    title="Financial Health"
+                    actionLabel="IOU List"
+                    onAction={() => { }}
                 />
 
-                {/* Debts Summary Card */}
                 {metrics && (
-                    <Card style={[styles.card, { backgroundColor: theme.colors.errorContainer, marginBottom: 24, borderLeftWidth: 8, borderLeftColor: theme.colors.error }]}>
+                    <Card style={[styles.debtCard, { borderLeftColor: theme.colors.error }]}>
                         <Card.Content>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <View>
-                                    <Text variant="labelSmall" style={{ color: theme.colors.error }}>UNCOLLECTED DEBTS</Text>
-                                    <Text variant="titleLarge" style={{ fontWeight: '900', color: theme.colors.error }}>
-                                        ${metrics?.totalDebts?.toLocaleString() || '0.00'}
-                                    </Text>
+                                    <Text variant="labelSmall" style={{ color: theme.colors.error, fontWeight: '900' }}>TOTAL OUTSTANDING DEBT</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                                        <Text variant="headlineMedium" style={{ fontWeight: '900', color: theme.colors.error }}>
+                                            ${metrics?.totalDebts?.toLocaleString() || '0.00'}
+                                        </Text>
+                                        <Text variant="labelSmall" style={{ marginLeft: 4, color: theme.colors.outline }}>from customers (IOUs)</Text>
+                                    </View>
                                 </View>
-                                <HugeiconsIcon icon={Wallet01Icon} size={32} color={theme.colors.error} />
+                                <View style={[styles.iconIndicator, { backgroundColor: theme.colors.errorContainer }]}>
+                                    <HugeiconsIcon icon={Wallet01Icon} size={24} color={theme.colors.error} />
+                                </View>
                             </View>
                         </Card.Content>
                     </Card>
                 )}
 
                 <SectionHeader
-                    title="All Transactions"
+                    title="Expense Logs"
                 />
 
                 {reportsLoading || expensesLoading ? (
@@ -253,11 +301,11 @@ export default function FinancialsScreen() {
 
             <FAB
                 icon="plus"
-                label="Expense"
+                label="New Expense"
                 style={styles.fab}
                 onPress={() => router.push('/financials/add')}
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -265,8 +313,51 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerContainer: {
+        paddingHorizontal: 20,
+        backgroundColor: 'transparent',
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        marginTop: 10,
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    notifBtn: {
+        position: 'relative',
+        padding: 4,
+    },
+    notifBadge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        fontWeight: 'bold',
+        backgroundColor: '#ef4444',
+    },
+    avatarContainer: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
     content: {
-        padding: 16,
+        padding: 20,
     },
     filterButtons: {
         marginBottom: 24,
@@ -283,6 +374,20 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
+    },
+    debtCard: {
+        marginBottom: 12,
+        borderRadius: 16,
+        elevation: 2,
+        borderLeftWidth: 6,
+        backgroundColor: '#fff',
+    },
+    iconIndicator: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     metricsGrid: {
         flexDirection: 'row',
@@ -313,6 +418,7 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         borderRadius: 16,
+        backgroundColor: '#6366f1',
     },
     centered: {
         paddingVertical: 40,

@@ -40,6 +40,7 @@ import Animated, {
     Layout,
     SlideInRight,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type AuthStep = 'identify' | 'password' | 'register' | 'reconnect' | 'syncing';
 
@@ -220,221 +221,223 @@ export default function LoginScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                <FadeView scale duration={800} style={styles.header}>
-                    <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
-                        <Text variant="headlineMedium" style={styles.logoText}>S</Text>
-                    </View>
-                    <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onSurface }]}>STOCK</Text>
-                    <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-                        {isFreshSetup ? 'New Device Detected' : 'Intelligence for your business'}
-                    </Text>
-                </FadeView>
+            <SafeAreaView style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+                    <FadeView scale duration={800} style={styles.header}>
+                        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
+                            <Text variant="headlineMedium" style={styles.logoText}>S</Text>
+                        </View>
+                        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onSurface }]}>STOCK</Text>
+                        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+                            {isFreshSetup ? 'New Device Detected' : 'Intelligence for your business'}
+                        </Text>
+                    </FadeView>
 
-                <Animated.View layout={Layout.springify()} style={styles.cardWrapper}>
-                    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                    <Animated.View layout={Layout.springify()} style={styles.cardWrapper}>
+                        <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
 
-                        {/* Identify Step */}
-                        {step === 'identify' && (
-                            <Animated.View entering={FadeInDown.duration(400)}>
-                                <Text variant="titleLarge" style={styles.cardTitle}>Identity</Text>
-                                <Text variant="bodySmall" style={styles.cardSubtitle}>
-                                    {isFreshSetup
-                                        ? "New device detected. Enter a username to create your local profile."
-                                        : "Enter username to sign in to this workspace."
-                                    }
-                                </Text>
+                            {/* Identify Step */}
+                            {step === 'identify' && (
+                                <Animated.View entering={FadeInDown.duration(400)}>
+                                    <Text variant="titleLarge" style={styles.cardTitle}>Identity</Text>
+                                    <Text variant="bodySmall" style={styles.cardSubtitle}>
+                                        {isFreshSetup
+                                            ? "New device detected. Enter a username to create your local profile."
+                                            : "Enter username to sign in to this workspace."
+                                        }
+                                    </Text>
 
-                                <TextInput
-                                    mode="outlined"
-                                    placeholder="Username"
-                                    value={username}
-                                    onChangeText={(t) => { setUsername(t); setError(''); }}
-                                    autoCapitalize="none"
-                                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />} />}
-                                    style={styles.input}
-                                />
-                                {error ? <HelperText type="error">{error}</HelperText> : null}
+                                    <TextInput
+                                        mode="outlined"
+                                        placeholder="Username"
+                                        value={username}
+                                        onChangeText={(t) => { setUsername(t); setError(''); }}
+                                        autoCapitalize="none"
+                                        left={<TextInput.Icon icon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />} />}
+                                        style={styles.input}
+                                    />
+                                    {error ? <HelperText type="error">{error}</HelperText> : null}
 
-                                <Button
-                                    mode="contained"
-                                    onPress={checkUser}
-                                    loading={loading}
-                                    style={styles.actionButton}
-                                    contentStyle={styles.actionButtonContent}
-                                >
-                                    Continue
-                                </Button>
-
-                                {isFreshSetup && (
-                                    <TouchableOpacity
-                                        onPress={() => setStep('reconnect')}
-                                        style={styles.reconnectButton}
-                                    >
-                                        <HugeiconsIcon icon={CloudIcon} size={18} color={theme.colors.primary} />
-                                        <Text variant="labelLarge" style={{ color: theme.colors.primary, marginLeft: 8 }}>Reconnect Workspace</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </Animated.View>
-                        )}
-
-                        {/* Password Step (Existing User) */}
-                        {step === 'password' && (
-                            <Animated.View entering={SlideInRight.duration(400)}>
-                                <View style={styles.userRow}>
-                                    <IconButton icon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />} style={styles.miniAvatar} />
-                                    <View>
-                                        <Text variant="titleMedium">Welcome back, {foundUser?.fullName || username}</Text>
-                                        <Text variant="bodySmall" onPress={resetFlow} style={{ color: theme.colors.primary }}>Not you? Switch account</Text>
-                                    </View>
-                                </View>
-
-                                <TextInput
-                                    mode="outlined"
-                                    placeholder="Enter password"
-                                    secureTextEntry={!showPassword}
-                                    value={password}
-                                    onChangeText={(t) => { setPassword(t); setError(''); }}
-                                    left={<TextInput.Icon icon={() => <HugeiconsIcon icon={CircleLock02FreeIcons} size={20} color={theme.colors.onSurfaceVariant} />} />}
-                                    right={<TextInput.Icon icon={() => <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} onPress={() => setShowPassword(!showPassword)} />} />}
-                                    style={styles.input}
-                                />
-                                {error ? <HelperText type="error">{error}</HelperText> : null}
-
-                                <Button
-                                    mode="contained"
-                                    onPress={handleLogin}
-                                    loading={loading}
-                                    style={styles.actionButton}
-                                    contentStyle={styles.actionButtonContent}
-                                >
-                                    Unlock
-                                </Button>
-                            </Animated.View>
-                        )}
-
-                        {/* Register Step (New User) */}
-                        {step === 'register' && (
-                            <Animated.View entering={SlideInRight.duration(400)}>
-                                <Text variant="titleMedium">Setup Local Profile</Text>
-                                <Text variant="bodySmall" style={{ marginBottom: 16 }}>@{username} is ready for this device!</Text>
-
-                                <TextInput
-                                    mode="outlined"
-                                    label="Full Name"
-                                    placeholder="Enter your name"
-                                    value={fullName}
-                                    onChangeText={setFullName}
-                                    style={styles.input}
-                                />
-
-                                <TextInput
-                                    mode="outlined"
-                                    label="Create Password"
-                                    secureTextEntry={!showPassword}
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    right={<TextInput.Icon icon={() => <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} onPress={() => setShowPassword(!showPassword)} />} />}
-                                    style={styles.input}
-                                />
-
-                                {error ? <HelperText type="error">{error}</HelperText> : null}
-
-                                <View style={styles.row}>
-                                    <Button mode="text" onPress={resetFlow} style={{ flex: 1 }}>Back</Button>
                                     <Button
                                         mode="contained"
-                                        onPress={handleRegister}
+                                        onPress={checkUser}
                                         loading={loading}
-                                        style={[styles.actionButton, { flex: 2, marginTop: 0 }]}
+                                        style={styles.actionButton}
                                         contentStyle={styles.actionButtonContent}
                                     >
-                                        Start Setup
+                                        Continue
                                     </Button>
-                                </View>
-                            </Animated.View>
-                        )}
 
-                        {/* Reconnect Step */}
-                        {step === 'reconnect' && (
-                            <Animated.View entering={FadeInUp.duration(400)}>
-                                <View style={styles.reconnectHeader}>
-                                    <HugeiconsIcon icon={CloudIcon} size={42} color={theme.colors.primary} />
-                                    <Text variant="titleLarge" style={styles.reconnectTitle}>Workspace Sync</Text>
-                                    <Text variant="bodySmall" style={styles.reconnectSubtitle}>
-                                        Moving data to this device? Import your database or connect to your cloud backup.
-                                    </Text>
-                                </View>
+                                    {isFreshSetup && (
+                                        <TouchableOpacity
+                                            onPress={() => setStep('reconnect')}
+                                            style={styles.reconnectButton}
+                                        >
+                                            <HugeiconsIcon icon={CloudIcon} size={18} color={theme.colors.primary} />
+                                            <Text variant="labelLarge" style={{ color: theme.colors.primary, marginLeft: 8 }}>Reconnect Workspace</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </Animated.View>
+                            )}
 
-                                <Button
-                                    mode="outlined"
-                                    icon={() => <HugeiconsIcon icon={LeftToRightListDashIcon} size={18} color={theme.colors.onSurface} />}
-                                    onPress={importDatabase}
-                                    style={styles.input}
-                                >
-                                    Import db.sqlite
-                                </Button>
+                            {/* Password Step (Existing User) */}
+                            {step === 'password' && (
+                                <Animated.View entering={SlideInRight.duration(400)}>
+                                    <View style={styles.userRow}>
+                                        <IconButton icon={() => <HugeiconsIcon icon={UserIcon} size={20} color={theme.colors.primary} />} style={styles.miniAvatar} />
+                                        <View>
+                                            <Text variant="titleMedium">Welcome back, {foundUser?.fullName || username}</Text>
+                                            <Text variant="bodySmall" onPress={resetFlow} style={{ color: theme.colors.primary }}>Not you? Switch account</Text>
+                                        </View>
+                                    </View>
 
-                                <Button
-                                    mode="contained-tonal"
-                                    icon={() => <HugeiconsIcon icon={CloudIcon} size={18} color={theme.colors.primary} />}
-                                    onPress={startCloudSync}
-                                    style={styles.input}
-                                >
-                                    Connect to Cloud
-                                </Button>
-
-                                <Button
-                                    mode="text"
-                                    onPress={resetFlow}
-                                    style={{ marginTop: 8 }}
-                                >
-                                    Back to local setup
-                                </Button>
-                            </Animated.View>
-                        )}
-
-                        {/* Syncing Step */}
-                        {step === 'syncing' && (
-                            <Animated.View entering={FadeInDown.duration(400)} style={styles.syncContainer}>
-                                <HugeiconsIcon icon={CloudIcon} size={64} color={theme.colors.primary} />
-                                <Text variant="titleLarge" style={styles.syncTitle}>Syncing with Cloud...</Text>
-                                <Text variant="bodySmall" style={styles.syncSubtitle}>Searching for your business workspace backups</Text>
-
-                                <View style={styles.progressTrack}>
-                                    <Animated.View
-                                        style={[
-                                            styles.progressBar,
-                                            {
-                                                width: `${syncProgress * 100}%`,
-                                                backgroundColor: theme.colors.primary
-                                            }
-                                        ]}
+                                    <TextInput
+                                        mode="outlined"
+                                        placeholder="Enter password"
+                                        secureTextEntry={!showPassword}
+                                        value={password}
+                                        onChangeText={(t) => { setPassword(t); setError(''); }}
+                                        left={<TextInput.Icon icon={() => <HugeiconsIcon icon={CircleLock02FreeIcons} size={20} color={theme.colors.onSurfaceVariant} />} />}
+                                        right={<TextInput.Icon icon={() => <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} onPress={() => setShowPassword(!showPassword)} />} />}
+                                        style={styles.input}
                                     />
-                                </View>
+                                    {error ? <HelperText type="error">{error}</HelperText> : null}
 
-                                <Text variant="labelSmall" style={{ marginTop: 8, opacity: 0.5 }}>
-                                    {Math.round(syncProgress * 100)}% Complete
-                                </Text>
+                                    <Button
+                                        mode="contained"
+                                        onPress={handleLogin}
+                                        loading={loading}
+                                        style={styles.actionButton}
+                                        contentStyle={styles.actionButtonContent}
+                                    >
+                                        Unlock
+                                    </Button>
+                                </Animated.View>
+                            )}
 
-                                <Button
-                                    mode="text"
-                                    onPress={resetFlow}
-                                    style={{ marginTop: 24 }}
-                                >
-                                    Cancel Sync
-                                </Button>
-                            </Animated.View>
-                        )}
-                    </View>
-                </Animated.View>
+                            {/* Register Step (New User) */}
+                            {step === 'register' && (
+                                <Animated.View entering={SlideInRight.duration(400)}>
+                                    <Text variant="titleMedium">Setup Local Profile</Text>
+                                    <Text variant="bodySmall" style={{ marginBottom: 16 }}>@{username} is ready for this device!</Text>
 
-                <Animated.View entering={FadeInUp.delay(600)} style={styles.footer}>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
-                        Offline First • SECURE ENCRYPTION
-                    </Text>
-                </Animated.View>
-            </ScrollView>
+                                    <TextInput
+                                        mode="outlined"
+                                        label="Full Name"
+                                        placeholder="Enter your name"
+                                        value={fullName}
+                                        onChangeText={setFullName}
+                                        style={styles.input}
+                                    />
+
+                                    <TextInput
+                                        mode="outlined"
+                                        label="Create Password"
+                                        secureTextEntry={!showPassword}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        right={<TextInput.Icon icon={() => <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} onPress={() => setShowPassword(!showPassword)} />} />}
+                                        style={styles.input}
+                                    />
+
+                                    {error ? <HelperText type="error">{error}</HelperText> : null}
+
+                                    <View style={styles.row}>
+                                        <Button mode="text" onPress={resetFlow} style={{ flex: 1 }}>Back</Button>
+                                        <Button
+                                            mode="contained"
+                                            onPress={handleRegister}
+                                            loading={loading}
+                                            style={[styles.actionButton, { flex: 2, marginTop: 0 }]}
+                                            contentStyle={styles.actionButtonContent}
+                                        >
+                                            Start Setup
+                                        </Button>
+                                    </View>
+                                </Animated.View>
+                            )}
+
+                            {/* Reconnect Step */}
+                            {step === 'reconnect' && (
+                                <Animated.View entering={FadeInUp.duration(400)}>
+                                    <View style={styles.reconnectHeader}>
+                                        <HugeiconsIcon icon={CloudIcon} size={42} color={theme.colors.primary} />
+                                        <Text variant="titleLarge" style={styles.reconnectTitle}>Workspace Sync</Text>
+                                        <Text variant="bodySmall" style={styles.reconnectSubtitle}>
+                                            Moving data to this device? Import your database or connect to your cloud backup.
+                                        </Text>
+                                    </View>
+
+                                    <Button
+                                        mode="outlined"
+                                        icon={() => <HugeiconsIcon icon={LeftToRightListDashIcon} size={18} color={theme.colors.onSurface} />}
+                                        onPress={importDatabase}
+                                        style={styles.input}
+                                    >
+                                        Import db.sqlite
+                                    </Button>
+
+                                    <Button
+                                        mode="contained-tonal"
+                                        icon={() => <HugeiconsIcon icon={CloudIcon} size={18} color={theme.colors.primary} />}
+                                        onPress={startCloudSync}
+                                        style={styles.input}
+                                    >
+                                        Connect to Cloud
+                                    </Button>
+
+                                    <Button
+                                        mode="text"
+                                        onPress={resetFlow}
+                                        style={{ marginTop: 8 }}
+                                    >
+                                        Back to local setup
+                                    </Button>
+                                </Animated.View>
+                            )}
+
+                            {/* Syncing Step */}
+                            {step === 'syncing' && (
+                                <Animated.View entering={FadeInDown.duration(400)} style={styles.syncContainer}>
+                                    <HugeiconsIcon icon={CloudIcon} size={64} color={theme.colors.primary} />
+                                    <Text variant="titleLarge" style={styles.syncTitle}>Syncing with Cloud...</Text>
+                                    <Text variant="bodySmall" style={styles.syncSubtitle}>Searching for your business workspace backups</Text>
+
+                                    <View style={styles.progressTrack}>
+                                        <Animated.View
+                                            style={[
+                                                styles.progressBar,
+                                                {
+                                                    width: `${syncProgress * 100}%`,
+                                                    backgroundColor: theme.colors.primary
+                                                }
+                                            ]}
+                                        />
+                                    </View>
+
+                                    <Text variant="labelSmall" style={{ marginTop: 8, opacity: 0.5 }}>
+                                        {Math.round(syncProgress * 100)}% Complete
+                                    </Text>
+
+                                    <Button
+                                        mode="text"
+                                        onPress={resetFlow}
+                                        style={{ marginTop: 24 }}
+                                    >
+                                        Cancel Sync
+                                    </Button>
+                                </Animated.View>
+                            )}
+                        </View>
+                    </Animated.View>
+
+                    <Animated.View entering={FadeInUp.delay(600)} style={styles.footer}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
+                            Offline First • SECURE ENCRYPTION
+                        </Text>
+                    </Animated.View>
+                </ScrollView>
+            </SafeAreaView>
         </KeyboardAvoidingView>
     );
 }

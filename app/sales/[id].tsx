@@ -3,6 +3,7 @@ import { useProducts } from '@/src/hooks/useProducts';
 import { useSales } from '@/src/hooks/useSales';
 import {
     Alert02Icon,
+    ArrowLeft02Icon,
     CheckmarkCircle02Icon,
     CreditCardIcon,
     Invoice01Icon,
@@ -14,11 +15,12 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Print from 'expo-print';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
 import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Card, Dialog, IconButton, List, Portal, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function OrderDetailsScreen() {
@@ -47,8 +49,6 @@ export default function OrderDetailsScreen() {
                 type: 'error',
                 text1: 'Invalid Amount',
                 text2: 'Please enter a valid positive payment amount.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
             return;
         }
@@ -59,8 +59,6 @@ export default function OrderDetailsScreen() {
                 type: 'success',
                 text1: 'Payment Recorded',
                 text2: `$${paymentAmount} payment added to Order #${id}`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             setPaymentVisible(false);
@@ -71,8 +69,6 @@ export default function OrderDetailsScreen() {
                 type: 'error',
                 text1: 'Save Failed',
                 text2: 'Could not record payment.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
@@ -192,16 +188,26 @@ export default function OrderDetailsScreen() {
     };
 
     if (!order) return (
-        <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+        <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]}>
             <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>Order not found</Text>
-        </View>
+        </SafeAreaView>
     );
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: 'Order Details' }} />
-            <View style={styles.content}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>Order Details</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>Order #{id}</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <Surface style={[styles.statusBanner, {
                     backgroundColor: balance <= 0 ? theme.colors.primary : theme.colors.errorContainer,
                     borderColor: balance <= 0 ? theme.colors.primary : theme.colors.error
@@ -319,7 +325,7 @@ export default function OrderDetailsScreen() {
                         style={styles.actionBtn}
                         contentStyle={{ height: 56 }}
                     >
-                        Generate PDF
+                        Print Invoice
                     </Button>
                     <Button
                         mode="outlined"
@@ -377,14 +383,37 @@ export default function OrderDetailsScreen() {
                         </Dialog.Actions>
                     </Dialog>
                 </Portal>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
     },
     content: {
         padding: 20,

@@ -1,27 +1,23 @@
+import { useAuth } from '@/src/hooks/useAuth';
+import { useNotifications } from '@/src/hooks/useNotifications';
 import { useProducts } from '@/src/hooks/useProducts';
-import { Alert02Icon, ArrowRight01Icon, PackageIcon, PlusSignIcon, Search01Icon, StarIcon } from '@hugeicons/core-free-icons';
+import { useSettingsStore } from '@/src/store/useSettingsStore';
+import { Alert02Icon, ArrowRight01Icon, Notification03Icon, PackageIcon, PlusSignIcon, Search01Icon, StarIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Button, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Avatar, Badge, Button, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InventoryScreen() {
     const { products, isLoading, error } = useProducts();
+    const { user } = useAuth();
+    const { unreadCount } = useNotifications();
+    const { storeName } = useSettingsStore();
     const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
     const theme = useTheme();
-
-    if (error) {
-        return (
-            <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
-                <HugeiconsIcon icon={Alert02Icon} size={48} color={theme.colors.error} />
-                <Text variant="titleMedium" style={{ color: theme.colors.error, marginTop: 12 }}>Connection Lost</Text>
-                <Text variant="bodySmall" style={{ marginBottom: 16 }}>Unable to load your inventory</Text>
-                <Button mode="contained" onPress={() => router.replace('/inventory' as any)}>Retry Connection</Button>
-            </View>
-        );
-    }
 
     const filteredProducts = useMemo(() => {
         return products.filter((p) =>
@@ -109,24 +105,63 @@ export default function InventoryScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <View style={styles.topBar}>
-                <View style={styles.searchWrapper}>
-                    <Searchbar
-                        placeholder="Search stock..."
-                        onChangeText={setSearchQuery}
-                        value={searchQuery}
-                        style={[styles.premiumSearch, { backgroundColor: theme.colors.surface }]}
-                        icon={() => <HugeiconsIcon icon={Search01Icon} size={20} color={theme.colors.primary} />}
-                        inputStyle={styles.searchInput}
-                        elevation={0}
-                    />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <View>
+                        <Text variant="headlineMedium" style={styles.greeting}>
+                            {storeName || 'Stock Hub'}
+                        </Text>
+                        <Text variant="bodyLarge" style={styles.userName}>
+                            {user?.fullName || user?.username}
+                        </Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity
+                            onPress={() => router.push('/notifications')}
+                            style={styles.notifBtn}
+                        >
+                            <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
+                            {unreadCount > 0 && (
+                                <Badge
+                                    style={styles.notifBadge}
+                                    size={16}
+                                >
+                                    {unreadCount}
+                                </Badge>
+                            )}
+                        </TouchableOpacity>
+                        <View style={styles.avatarContainer}>
+                            <Avatar.Text
+                                size={40}
+                                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                                style={{ backgroundColor: theme.colors.primaryContainer }}
+                                color={theme.colors.primary}
+                            />
+                        </View>
+                    </View>
                 </View>
+                <Searchbar
+                    placeholder="Search inventory..."
+                    onChangeText={setSearchQuery}
+                    value={searchQuery}
+                    style={[styles.premiumSearch, { backgroundColor: theme.colors.surfaceVariant + '40' }]}
+                    icon={() => <HugeiconsIcon icon={Search01Icon} size={20} color={theme.colors.primary} />}
+                    inputStyle={styles.searchInput}
+                    elevation={0}
+                />
             </View>
 
             {isLoading ? (
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
+            ) : error ? (
+                <View style={styles.centered}>
+                    <HugeiconsIcon icon={Alert02Icon} size={48} color={theme.colors.error} />
+                    <Text variant="titleMedium" style={{ color: theme.colors.error, marginTop: 12 }}>Connection Lost</Text>
+                    <Text variant="bodySmall" style={{ marginBottom: 16 }}>Unable to load your inventory</Text>
+                    <Button mode="contained" onPress={() => router.replace('/inventory' as any)}>Retry Connection</Button>
                 </View>
             ) : (
                 <FlatList
@@ -136,6 +171,7 @@ export default function InventoryScreen() {
                     contentContainerStyle={styles.listContent}
                     onRefresh={onRefresh}
                     refreshing={refreshing}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <HugeiconsIcon icon={PackageIcon} size={64} color={theme.colors.outlineVariant} />
@@ -157,7 +193,7 @@ export default function InventoryScreen() {
                 style={styles.fab}
                 onPress={() => router.push('/inventory/add')}
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -165,27 +201,61 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    topBar: {
-        padding: 16,
-        paddingBottom: 8,
+    headerContainer: {
+        paddingHorizontal: 20,
+        backgroundColor: 'transparent',
+        paddingBottom: 16,
     },
-    searchWrapper: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        marginTop: 10,
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    notifBtn: {
+        position: 'relative',
+        padding: 4,
+    },
+    notifBadge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        fontWeight: 'bold',
+        backgroundColor: '#ef4444',
+    },
+    avatarContainer: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     premiumSearch: {
         borderRadius: 16,
-        height: 52,
+        height: 48,
+        backgroundColor: '#f1f5f9',
     },
     searchInput: {
         fontSize: 15,
         minHeight: 0,
     },
     listContent: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingBottom: 100,
         paddingTop: 8,
     },
@@ -293,6 +363,6 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         borderRadius: 20,
-        backgroundColor: '#6366f1', // Indigo premium
+        backgroundColor: '#6366f1',
     },
 });

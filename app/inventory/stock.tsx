@@ -1,11 +1,12 @@
 import { useProducts } from '@/src/hooks/useProducts';
 import { useStock } from '@/src/hooks/useStock';
-import { PackageIcon } from '@hugeicons/core-free-icons';
+import { ArrowLeft02Icon, PackageIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function StockManagementScreen() {
@@ -19,7 +20,7 @@ export default function StockManagementScreen() {
     const product = products.find((p) => p.id === productId);
     const { data: stockLevels } = getStockForProduct(productId);
 
-    const [mode, setMode] = useState('adjust'); // adjust, transfer
+    const [mode, setMode] = useState('adjust');
     const [form, setForm] = useState({
         locationId: '',
         fromLocationId: '',
@@ -28,7 +29,6 @@ export default function StockManagementScreen() {
         reason: '',
     });
 
-    // Auto-select first location when loaded
     React.useEffect(() => {
         if (locations && locations.length > 0 && !form.locationId) {
             setForm(prev => ({ ...prev, locationId: locations[0].id.toString() }));
@@ -94,174 +94,176 @@ export default function StockManagementScreen() {
     if (!product) return null;
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.container, { backgroundColor: theme.colors.background }]}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-        >
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-                <Stack.Screen options={{ title: `Stock Control` }} />
-
-                <View style={styles.header}>
-                    <Text variant="headlineSmall" style={styles.productTitle}>{product.name}</Text>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>Real-time stock management</Text>
-                </View>
-
-                <Surface style={styles.stockSummary} elevation={2}>
-                    <View style={styles.summaryHeader}>
-                        <HugeiconsIcon icon={PackageIcon} size={20} color="#fff" />
-                        <Text variant="titleSmall" style={{ color: '#fff', marginLeft: 8, fontWeight: '900' }}>TOTAL UNITS ON HAND</Text>
-                    </View>
-                    <View style={styles.summaryBody}>
-                        {stockLevels?.map((level) => {
-                            const loc = locations.find(l => l.id === level.locationId);
-                            return (
-                                <View key={level.id} style={styles.summaryRow}>
-                                    <Text style={styles.locationLabel}>{loc?.name || 'Store'}</Text>
-                                    <Text style={styles.quantityText}>{level.quantity} units</Text>
-                                </View>
-                            );
-                        })}
-                        {(!stockLevels || stockLevels.length === 0) && (
-                            <Text style={{ color: '#fff', opacity: 0.6, textAlign: 'center' }}>No current stock recorded</Text>
-                        )}
-                    </View>
-                </Surface>
-
-                <SegmentedButtons
-                    value={mode}
-                    onValueChange={setMode}
-                    buttons={[
-                        { value: 'adjust', label: 'Restock / Adjust', icon: 'plus-minus' },
-                        { value: 'transfer', label: 'Move Stock', icon: 'swap-horizontal' },
-                    ]}
-                    style={styles.segmented}
-                />
-
-                <Surface style={styles.formCard} elevation={1}>
-                    {mode === 'adjust' ? (
-                        <>
-                            <Text variant="labelLarge" style={styles.inputLabel}>CHOOSE STORAGE LOCATION</Text>
-                            <View style={styles.chipRow}>
-                                {locations.length === 0 && (
-                                    <Text style={{ color: theme.colors.error, fontStyle: 'italic' }}>
-                                        No locations found. (Database might be initializing)
-                                    </Text>
-                                )}
-                                {locations.map((loc) => (
-                                    <TouchableOpacity
-                                        key={loc.id}
-                                        onPress={() => setForm({ ...form, locationId: loc.id.toString() })}
-                                        style={[
-                                            styles.locationChip,
-                                            form.locationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
-                                        ]}
-                                    >
-                                        <Text style={[
-                                            styles.chipText,
-                                            form.locationId === loc.id.toString() && { color: '#fff' }
-                                        ]}>{loc.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <TextInput
-                                label="Quantity (+ add, - remove)"
-                                mode="outlined"
-                                placeholder="0"
-                                value={form.quantity}
-                                onChangeText={(text) => setForm({ ...form, quantity: text })}
-                                keyboardType="numeric"
-                                style={styles.premiumInput}
-                                outlineStyle={{ borderRadius: 16 }}
-                                activeOutlineColor="#6366f1"
-                                left={<TextInput.Icon icon="plus-thick" color="#6366f1" />}
-                            />
-
-                            <TextInput
-                                label="Reason / Note"
-                                mode="outlined"
-                                placeholder="e.g., Restock from supplier"
-                                value={form.reason}
-                                onChangeText={(text) => setForm({ ...form, reason: text })}
-                                style={styles.premiumInput}
-                                outlineStyle={{ borderRadius: 16 }}
-                            />
-
-                            <Button
-                                mode="contained"
-                                onPress={handleAdjust}
-                                style={styles.submitBtn}
-                                contentStyle={{ height: 56 }}
-                                labelStyle={{ fontWeight: '900' }}
-                            >
-                                SAVE UNIT UPDATE
-                            </Button>
-                        </>
-                    ) : (
-                        <View style={styles.form}>
-                            <Text variant="labelLarge" style={styles.inputLabel}>FROM LOCATION</Text>
-                            <View style={styles.chipRow}>
-                                {locations.map((loc) => (
-                                    <TouchableOpacity
-                                        key={loc.id}
-                                        onPress={() => setForm({ ...form, fromLocationId: loc.id.toString() })}
-                                        style={[
-                                            styles.locationChip,
-                                            form.fromLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
-                                        ]}
-                                    >
-                                        <Text style={[
-                                            styles.chipText,
-                                            form.fromLocationId === loc.id.toString() && { color: '#fff' }
-                                        ]}>{loc.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <Text variant="labelLarge" style={styles.inputLabel}>TO LOCATION</Text>
-                            <View style={styles.chipRow}>
-                                {locations.map((loc) => (
-                                    <TouchableOpacity
-                                        key={loc.id}
-                                        onPress={() => setForm({ ...form, toLocationId: loc.id.toString() })}
-                                        style={[
-                                            styles.locationChip,
-                                            form.toLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
-                                        ]}
-                                    >
-                                        <Text style={[
-                                            styles.chipText,
-                                            form.toLocationId === loc.id.toString() && { color: '#fff' }
-                                        ]}>{loc.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <TextInput
-                                label="How many units?"
-                                mode="outlined"
-                                value={form.quantity}
-                                onChangeText={(text) => setForm({ ...form, quantity: text })}
-                                keyboardType="numeric"
-                                style={styles.premiumInput}
-                                outlineStyle={{ borderRadius: 16 }}
-                                activeOutlineColor="#6366f1"
-                            />
-                            <Button
-                                mode="contained"
-                                onPress={handleTransfer}
-                                style={styles.submitBtn}
-                                contentStyle={{ height: 56 }}
-                                labelStyle={{ fontWeight: '900' }}
-                            >
-                                MOVE UNITS
-                            </Button>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>Stock Control</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>{product.name}</Text>
                         </View>
-                    )}
-                </Surface>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <Surface style={styles.stockSummary} elevation={2}>
+                        <View style={styles.summaryHeader}>
+                            <HugeiconsIcon icon={PackageIcon} size={20} color="#fff" />
+                            <Text variant="titleSmall" style={{ color: '#fff', marginLeft: 8, fontWeight: '900' }}>TOTAL UNITS ON HAND</Text>
+                        </View>
+                        <View style={styles.summaryBody}>
+                            {stockLevels?.map((level) => {
+                                const loc = locations.find(l => l.id === level.locationId);
+                                return (
+                                    <View key={level.id} style={styles.summaryRow}>
+                                        <Text style={styles.locationLabel}>{loc?.name || 'Store'}</Text>
+                                        <Text style={styles.quantityText}>{level.quantity} units</Text>
+                                    </View>
+                                );
+                            })}
+                            {(!stockLevels || stockLevels.length === 0) && (
+                                <Text style={{ color: '#fff', opacity: 0.6, textAlign: 'center' }}>No current stock recorded</Text>
+                            )}
+                        </View>
+                    </Surface>
+
+                    <SegmentedButtons
+                        value={mode}
+                        onValueChange={setMode}
+                        buttons={[
+                            { value: 'adjust', label: 'Restock / Adjust', icon: 'plus-minus' },
+                            { value: 'transfer', label: 'Move Stock', icon: 'swap-horizontal' },
+                        ]}
+                        style={styles.segmented}
+                    />
+
+                    <Surface style={styles.formCard} elevation={1}>
+                        {mode === 'adjust' ? (
+                            <>
+                                <Text variant="labelLarge" style={styles.inputLabel}>CHOOSE STORAGE LOCATION</Text>
+                                <View style={styles.chipRow}>
+                                    {locations.map((loc) => (
+                                        <TouchableOpacity
+                                            key={loc.id}
+                                            onPress={() => setForm({ ...form, locationId: loc.id.toString() })}
+                                            style={[
+                                                styles.locationChip,
+                                                form.locationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                            ]}
+                                        >
+                                            <Text style={[
+                                                styles.chipText,
+                                                form.locationId === loc.id.toString() && { color: '#fff' }
+                                            ]}>{loc.name}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TextInput
+                                    label="Quantity (+ add, - remove)"
+                                    mode="outlined"
+                                    placeholder="0"
+                                    value={form.quantity}
+                                    onChangeText={(text) => setForm({ ...form, quantity: text })}
+                                    keyboardType="numeric"
+                                    style={styles.premiumInput}
+                                    outlineStyle={{ borderRadius: 16 }}
+                                    activeOutlineColor="#6366f1"
+                                    left={<TextInput.Icon icon="plus-thick" color="#6366f1" />}
+                                />
+
+                                <TextInput
+                                    label="Reason / Note"
+                                    mode="outlined"
+                                    placeholder="e.g., Restock from supplier"
+                                    value={form.reason}
+                                    onChangeText={(text) => setForm({ ...form, reason: text })}
+                                    style={styles.premiumInput}
+                                    outlineStyle={{ borderRadius: 16 }}
+                                />
+
+                                <Button
+                                    mode="contained"
+                                    onPress={handleAdjust}
+                                    style={styles.submitBtn}
+                                    contentStyle={{ height: 56 }}
+                                    labelStyle={{ fontWeight: '900' }}
+                                >
+                                    SAVE UNIT UPDATE
+                                </Button>
+                            </>
+                        ) : (
+                            <View style={styles.form}>
+                                <Text variant="labelLarge" style={styles.inputLabel}>FROM LOCATION</Text>
+                                <View style={styles.chipRow}>
+                                    {locations.map((loc) => (
+                                        <TouchableOpacity
+                                            key={loc.id}
+                                            onPress={() => setForm({ ...form, fromLocationId: loc.id.toString() })}
+                                            style={[
+                                                styles.locationChip,
+                                                form.fromLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                            ]}
+                                        >
+                                            <Text style={[
+                                                styles.chipText,
+                                                form.fromLocationId === loc.id.toString() && { color: '#fff' }
+                                            ]}>{loc.name}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <Text variant="labelLarge" style={styles.inputLabel}>TO LOCATION</Text>
+                                <View style={styles.chipRow}>
+                                    {locations.map((loc) => (
+                                        <TouchableOpacity
+                                            key={loc.id}
+                                            onPress={() => setForm({ ...form, toLocationId: loc.id.toString() })}
+                                            style={[
+                                                styles.locationChip,
+                                                form.toLocationId === loc.id.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }
+                                            ]}
+                                        >
+                                            <Text style={[
+                                                styles.chipText,
+                                                form.toLocationId === loc.id.toString() && { color: '#fff' }
+                                            ]}>{loc.name}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TextInput
+                                    label="How many units?"
+                                    mode="outlined"
+                                    value={form.quantity}
+                                    onChangeText={(text) => setForm({ ...form, quantity: text })}
+                                    keyboardType="numeric"
+                                    style={styles.premiumInput}
+                                    outlineStyle={{ borderRadius: 16 }}
+                                    activeOutlineColor="#6366f1"
+                                />
+                                <Button
+                                    mode="contained"
+                                    onPress={handleTransfer}
+                                    style={styles.submitBtn}
+                                    contentStyle={{ height: 56 }}
+                                    labelStyle={{ fontWeight: '900' }}
+                                >
+                                    MOVE UNITS
+                                </Button>
+                            </View>
+                        )}
+                    </Surface>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -269,21 +271,32 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
-        padding: 20,
-        paddingBottom: 40,
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
     },
     scrollContent: {
         padding: 20,
         paddingBottom: 40,
-    },
-    header: {
-        marginBottom: 24,
-    },
-    productTitle: {
-        fontWeight: '900',
-        color: '#1e293b',
-        letterSpacing: -0.5,
     },
     stockSummary: {
         marginBottom: 32,
