@@ -1,7 +1,6 @@
 import {
     ArrowTurnBackwardIcon,
     LicenseIcon,
-    Notification03Icon,
     ShoppingBag01Icon,
     UserGroupIcon
 } from '@hugeicons/core-free-icons';
@@ -9,25 +8,20 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Avatar, Badge, Card, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MainHeader } from '@/src/components/ui/MainHeader';
 import { SalesOrderItem } from '@/src/components/ui/SalesOrderItem';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
-import { useAuth } from '@/src/hooks/useAuth';
 import { useCustomers } from '@/src/hooks/useCustomers';
-import { useNotifications } from '@/src/hooks/useNotifications';
 import { useSales } from '@/src/hooks/useSales';
-import { useSettingsStore } from '@/src/store/useSettingsStore';
 
 export default function SalesScreen() {
     const router = useRouter();
     const theme = useTheme();
     const { orders } = useSales();
     const { customers } = useCustomers();
-    const { user } = useAuth();
-    const { unreadCount } = useNotifications();
-    const { storeName } = useSettingsStore();
 
     const menuItems = [
         { title: 'New Sale', label: 'Create Order', icon: ShoppingBag01Icon, route: '/sales/create', color: '#6366f1' },
@@ -38,42 +32,7 @@ export default function SalesScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerRow}>
-                    <View>
-                        <Text variant="headlineMedium" style={styles.greeting}>
-                            {storeName || 'Stock Hub'}
-                        </Text>
-                        <Text variant="bodyLarge" style={styles.userName}>
-                            {user?.fullName || user?.username}
-                        </Text>
-                    </View>
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity
-                            onPress={() => router.push('/notifications')}
-                            style={styles.notifBtn}
-                        >
-                            <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
-                            {unreadCount > 0 && (
-                                <Badge
-                                    style={styles.notifBadge}
-                                    size={16}
-                                >
-                                    {unreadCount}
-                                </Badge>
-                            )}
-                        </TouchableOpacity>
-                        <View style={styles.avatarContainer}>
-                            <Avatar.Text
-                                size={40}
-                                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                                style={{ backgroundColor: theme.colors.primaryContainer }}
-                                color={theme.colors.primary}
-                            />
-                        </View>
-                    </View>
-                </View>
-            </View>
+            <MainHeader title="Sales Overview" />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.grid}>

@@ -396,7 +396,7 @@ export default function QuickSaleScreen() {
                         <Card.Content>
                             <View style={styles.summaryTop}>
                                 <Text variant="labelLarge" style={styles.sectionLabel}>ORDER SUMMARY</Text>
-                                <Badge style={{ backgroundColor: theme.colors.primaryContainer, color: theme.colors.primary, fontWeight: 'bold' }}>{cart.length} ITEMS</Badge>
+                                <Badge style={{ backgroundColor: theme.colors.primaryContainer, color: theme.colors.primary, fontWeight: 'bold' }} children={`${cart.length} ITEMS`} />
                             </View>
 
                             {cart.map(item => {

@@ -1,3 +1,4 @@
+import { MainHeader } from '@/src/components/ui/MainHeader';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useExport } from '@/src/hooks/useExport';
@@ -14,8 +15,7 @@ import {
     Shield01Icon,
     Store01Icon,
     Sun01Icon,
-    UserGroupIcon,
-    UserIcon
+    UserGroupIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
@@ -66,191 +66,140 @@ export default function SettingsScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <Text variant="headlineMedium" style={styles.title}>System Settings</Text>
-                <Text variant="bodyLarge" style={styles.subtitle}>Configure your business environment</Text>
-            </View>
+            <MainHeader title="Settings" />
 
             <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.profileSection}>
                     <Avatar.Text
                         size={80}
-                        label={user?.fullName?.substring(0, 2).toUpperCase() || 'U'}
-                        style={{ backgroundColor: theme.colors.primary }}
-                        color="#fff"
+                        label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                        style={{ backgroundColor: theme.colors.primaryContainer }}
+                        color={theme.colors.primary}
                     />
-                    <Text variant="headlineSmall" style={[styles.profileName, { color: theme.colors.onSurface }]}>
-                        {user?.fullName || user?.username}
-                    </Text>
-                    <Text variant="bodyMedium" style={[styles.profileRole, { color: theme.colors.onSurfaceVariant }]}>
-                        {user?.role?.toUpperCase()} Profile
-                    </Text>
+                    <Text variant="headlineSmall" style={styles.profileName}>{user?.fullName || user?.username}</Text>
+                    <Text variant="bodyMedium" style={styles.profileRole}>{user?.role?.toUpperCase()}</Text>
                 </View>
 
                 <Divider style={styles.divider} />
 
-                <SectionHeader title="Appearance" />
-                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
-                    <List.Item
-                        title="System"
-                        description="Follow device theme settings"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={ComputerIcon} size={24} color={themeMode === 'system' ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
-                        right={(props) => themeMode === 'system' ? <List.Icon {...props} icon="check" color={theme.colors.primary} /> : null}
-                        onPress={() => setThemeMode('system')}
-                    />
-                    <List.Item
-                        title="Light"
-                        description="Always use light theme"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Sun01Icon} size={24} color={themeMode === 'light' ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
-                        right={(props) => themeMode === 'light' ? <List.Icon {...props} icon="check" color={theme.colors.primary} /> : null}
-                        onPress={() => setThemeMode('light')}
-                    />
-                    <List.Item
-                        title="Dark"
-                        description="Always use dark theme"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Moon01Icon} size={24} color={themeMode === 'dark' ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
-                        right={(props) => themeMode === 'dark' ? <List.Icon {...props} icon="check" color={theme.colors.primary} /> : null}
-                        onPress={() => setThemeMode('dark')}
-                    />
-                </List.Section>
-
-                <SectionHeader title="Business Identity" />
-                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                <SectionHeader title="Business Profile" />
+                <List.Section>
                     <List.Item
                         title="Store Name"
-                        description={storeName}
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Store01Icon} size={24} color={theme.colors.primary} />} />}
+                        description={storeName || 'Not Set'}
                         onPress={() => openEditDialog('name')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Store01Icon} size={24} color={theme.colors.primary} />} />}
+                        right={props => <List.Icon {...props} icon="pencil" />}
                     />
                     <List.Item
                         title="Business Address"
-                        description={businessAddress}
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={InformationCircleIcon} size={24} color={theme.colors.primary} />} />}
+                        description={businessAddress || 'Not Set'}
                         onPress={() => openEditDialog('address')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={InformationCircleIcon} size={24} color={theme.colors.primary} />} />}
+                        right={props => <List.Icon {...props} icon="pencil" />}
                     />
                 </List.Section>
 
-                <SectionHeader title="Communications" />
-                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                <SectionHeader title="Preferences" />
+                <List.Section>
                     <List.Item
-                        title="Push Notifications"
-                        description="Receive alerts for low stock and updates"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Notification03Icon} size={24} color={notificationsEnabled ? theme.colors.primary : theme.colors.onSurfaceVariant} />} />}
-                        right={() => (
-                            <Switch
-                                value={notificationsEnabled}
-                                onValueChange={setNotificationsEnabled}
-                                color={theme.colors.primary}
-                            />
-                        )}
+                        title="App Theme"
+                        description={themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={themeMode === 'dark' ? Moon01Icon : themeMode === 'light' ? Sun01Icon : ComputerIcon} size={24} color={theme.colors.primary} />} />}
+                        onPress={() => {
+                            const modes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
+                            const next = modes[(modes.indexOf(themeMode) + 1) % 3];
+                            setThemeMode(next);
+                        }}
+                    />
+                    <List.Item
+                        title="Notifications"
+                        description="Push alerts for low stock & sales"
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Notification03Icon} size={24} color={theme.colors.primary} />} />}
+                        right={() => <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />}
                     />
                 </List.Section>
 
-                <SectionHeader title="Security" />
-                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                <SectionHeader title="Security & Users" />
+                <List.Section>
                     <List.Item
-                        title="Change Password"
-                        description="Update your account password"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Shield01Icon} size={24} color={theme.colors.primary} />} />}
-                        right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => router.push('/settings/change-password' as any)}
+                        title="User Management"
+                        description="Add or remove staff accounts"
+                        onPress={() => router.push('/settings/users')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={UserGroupIcon} size={24} color={theme.colors.primary} />} />}
+                        right={props => <List.Icon {...props} icon="chevron-right" />}
+                    />
+                    <List.Item
+                        title="Security"
+                        description="Change your login password"
+                        onPress={() => router.push('/settings/change-password')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Shield01Icon} size={24} color={theme.colors.primary} />} />}
+                        right={props => <List.Icon {...props} icon="chevron-right" />}
                     />
                     <List.Item
                         title="Logout"
-                        description="Sign out from this device"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Logout01Icon} size={24} color={theme.colors.error} />} />}
+                        description="Sign out of your account"
                         onPress={logout}
                         titleStyle={{ color: theme.colors.error }}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Logout01Icon} size={24} color={theme.colors.error} />} />}
                     />
                 </List.Section>
 
-                {user?.role === 'admin' && (
-                    <>
-                        <SectionHeader title="Administration" />
-                        <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
-                            <List.Item
-                                title="User Management"
-                                description="Manage staff members and roles"
-                                left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={UserGroupIcon} size={24} color={theme.colors.primary} />} />}
-                                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                                onPress={() => router.push('/settings/users' as any)}
-                            />
-                            <List.Item
-                                title="Export Inventory"
-                                description="Download products list as CSV"
-                                left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Database01Icon} size={24} color={theme.colors.primary} />} />}
-                                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                                onPress={() => handleExport('products')}
-                            />
-                            <List.Item
-                                title="Export Sales"
-                                description="Download sales history as CSV"
-                                left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={File01Icon} size={24} color={theme.colors.primary} />} />}
-                                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                                onPress={() => handleExport('sales')}
-                            />
-                        </List.Section>
-                    </>
-                )}
-
-                <SectionHeader title="About" />
-                <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
+                <SectionHeader title="Data Management" />
+                <List.Section style={{ marginBottom: 40 }}>
                     <List.Item
-                        title="Developer"
-                        description="Praise Masunga (@PraiseTechzw)"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={UserIcon} size={24} color={theme.colors.primary} />} />}
+                        title="Export Products"
+                        description="Download inventory as CSV"
+                        onPress={() => handleExport('products')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Database01Icon} size={24} color={theme.colors.primary} />} />}
                     />
                     <List.Item
-                        title="Version"
-                        description="1.0.0 Stable"
-                        left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={ComputerIcon} size={24} color={theme.colors.onSurfaceVariant} />} />}
+                        title="Export Sales"
+                        description="Download transaction history"
+                        onPress={() => handleExport('sales')}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={File01Icon} size={24} color={theme.colors.primary} />} />}
+                    />
+                    <List.Item
+                        title="Factory Reset"
+                        description="Wipe all data and restart"
+                        onPress={() => {
+                            Alert.alert(
+                                'DANGER: Factory Reset',
+                                'This will permanently delete all products, sales, customers and local users. This action CANNOT be undone.',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Wipe Everything', style: 'destructive', onPress: factoryReset }
+                                ]
+                            );
+                        }}
+                        titleStyle={{ color: theme.colors.error }}
+                        left={props => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Logout01Icon} size={24} color={theme.colors.error} />} />}
                     />
                 </List.Section>
-
-                {user?.role === 'admin' && (
-                    <>
-                        <SectionHeader title="Danger Zone" />
-                        <List.Section style={[styles.listSection, { backgroundColor: theme.colors.surface }]}>
-                            <List.Item
-                                title="Reset All Data"
-                                description="Permanently delete all records"
-                                left={(props) => <List.Icon {...props} icon={() => <HugeiconsIcon icon={Database01Icon} size={24} color={theme.colors.error} />} />}
-                                onPress={() => Alert.alert(
-                                    'DANGER: Factory Reset',
-                                    'This will wipe ALL sales, customers, and inventory data. This cannot be undone.',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        { text: 'RESET EVERYTHING', style: 'destructive', onPress: factoryReset }
-                                    ]
-                                )}
-                                titleStyle={{ color: theme.colors.error }}
-                            />
-                        </List.Section>
-                    </>
-                )}
             </ScrollView>
 
             {exporting && (
-                <View style={[styles.loadingOverlay, { backgroundColor: theme.colors.backdrop + 'CC' }]}>
-                    <ActivityIndicator size="large" />
-                    <Text variant="bodyMedium" style={{ marginTop: 16, color: '#fff' }}>Generating CSV...</Text>
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <Text variant="bodyLarge" style={{ marginTop: 12, color: '#fff' }}>Exporting data...</Text>
                 </View>
             )}
 
             <Portal>
-                <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)} style={{ borderRadius: 24 }}>
-                    <Dialog.Title>Edit {editType === 'name' ? 'Store Name' : 'Business Address'}</Dialog.Title>
+                <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)} style={{ borderRadius: 28 }}>
+                    <Dialog.Title>Edit {editType === 'name' ? 'Store Name' : 'Address'}</Dialog.Title>
                     <Dialog.Content>
                         <PaperTextInput
                             mode="outlined"
                             value={editValue}
                             onChangeText={setEditValue}
-                            placeholder={editType === 'name' ? "Enter store name" : "Enter business address"}
+                            autoFocus
+                            outlineStyle={{ borderRadius: 12 }}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <PaperButton onPress={() => setEditDialogVisible(false)}>Cancel</PaperButton>
-                        <PaperButton onPress={saveEdit} mode="contained" style={{ borderRadius: 12 }}>Save</PaperButton>
+                        <PaperButton onPress={saveEdit}>Save Changes</PaperButton>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -262,49 +211,32 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerContainer: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 20,
-    },
-    title: {
-        fontWeight: '900',
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        color: '#64748b',
-        marginTop: -2,
-    },
     content: {
-        padding: 20,
         paddingBottom: 40,
     },
     profileSection: {
         alignItems: 'center',
-        marginBottom: 24,
+        paddingVertical: 24,
     },
     profileName: {
-        marginTop: 16,
-        fontWeight: 'bold',
+        fontWeight: '900',
+        marginTop: 12,
     },
     profileRole: {
-        marginTop: 4,
+        color: '#64748b',
+        fontWeight: 'bold',
+        fontSize: 12,
+        letterSpacing: 1,
     },
     divider: {
-        marginVertical: 16,
-    },
-    listSection: {
-        borderRadius: 24,
-        overflow: 'hidden',
-        marginBottom: 24,
-        elevation: 1,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        marginHorizontal: 20,
+        marginBottom: 8,
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
-    },
+    }
 });

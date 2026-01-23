@@ -1,30 +1,25 @@
-import { useAuth } from '@/src/hooks/useAuth';
 import { useExpenses } from '@/src/hooks/useExpenses';
-import { useNotifications } from '@/src/hooks/useNotifications';
 import { ReportFilter, useReports } from '@/src/hooks/useReports';
-import { useSettingsStore } from '@/src/store/useSettingsStore';
 import { isAfter, parseISO, startOfDay, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import * as Print from 'expo-print';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Avatar, Badge, Card, FAB, IconButton, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Avatar, Card, FAB, IconButton, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MainHeader } from '@/src/components/ui/MainHeader';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
-import { Delete02Icon, Notification03Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 
 export default function FinancialsScreen() {
     const [filter, setFilter] = useState<ReportFilter>('all');
     const { expenses, isLoading: expensesLoading, deleteExpense } = useExpenses();
     const { metrics, isLoading: reportsLoading } = useReports(filter);
-    const { user } = useAuth();
-    const { unreadCount } = useNotifications();
-    const { storeName } = useSettingsStore();
-    const router = useRouter();
     const theme = useTheme();
+    const router = useRouter();
 
     const getFilterDate = (range: ReportFilter) => {
         const now = new Date();
@@ -166,42 +161,7 @@ export default function FinancialsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerRow}>
-                    <View>
-                        <Text variant="headlineMedium" style={styles.greeting}>
-                            {storeName || 'Stock Hub'}
-                        </Text>
-                        <Text variant="bodyLarge" style={styles.userName}>
-                            {user?.fullName || user?.username}
-                        </Text>
-                    </View>
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity
-                            onPress={() => router.push('/notifications')}
-                            style={styles.notifBtn}
-                        >
-                            <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
-                            {unreadCount > 0 && (
-                                <Badge
-                                    style={styles.notifBadge}
-                                    size={16}
-                                >
-                                    {unreadCount}
-                                </Badge>
-                            )}
-                        </TouchableOpacity>
-                        <View style={styles.avatarContainer}>
-                            <Avatar.Text
-                                size={40}
-                                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                                style={{ backgroundColor: theme.colors.primaryContainer }}
-                                color={theme.colors.primary}
-                            />
-                        </View>
-                    </View>
-                </View>
-            </View>
+            <MainHeader title="Financials" />
 
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
                 <SegmentedButtons
@@ -317,13 +277,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         backgroundColor: 'transparent',
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-        marginTop: 10,
-    },
     greeting: {
         fontWeight: '900',
         letterSpacing: -0.5,
@@ -333,28 +286,6 @@ const styles = StyleSheet.create({
         color: '#64748b',
         fontWeight: '600',
         marginTop: -2,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    notifBtn: {
-        position: 'relative',
-        padding: 4,
-    },
-    notifBadge: {
-        position: 'absolute',
-        top: -2,
-        right: -2,
-        fontWeight: 'bold',
-        backgroundColor: '#ef4444',
-    },
-    avatarContainer: {
-        borderRadius: 20,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
     },
     content: {
         padding: 20,

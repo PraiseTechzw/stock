@@ -1,72 +1,32 @@
-import { Alert02Icon, ChartLineData01FreeIcons, Notification03Icon, PackageIcon, PlusSignIcon, ShoppingBag01Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
+import { Alert02Icon, ChartLineData01FreeIcons, PackageIcon, PlusSignIcon, ShoppingBag01Icon, Wallet01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Avatar, Badge, Button, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, SegmentedButtons, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Can } from '@/src/components/auth/Can';
 import { AIInsights } from '@/src/components/ui/AIInsights';
 import { AlertSection } from '@/src/components/ui/AlertSection';
+import { MainHeader } from '@/src/components/ui/MainHeader';
 import { MetricCard } from '@/src/components/ui/MetricCard';
 import { SalesChart } from '@/src/components/ui/SalesChart';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
-import { useAuth } from '@/src/hooks/useAuth';
-import { useNotifications } from '@/src/hooks/useNotifications';
 import { ReportFilter, useReports } from '@/src/hooks/useReports';
 import { useStock } from '@/src/hooks/useStock';
-import { useSettingsStore } from '@/src/store/useSettingsStore';
 
 export default function DashboardScreen() {
   const [filter, setFilter] = useState<ReportFilter>('all');
   const { lowStockProducts } = useStock();
   const { metrics, salesByCategory, recentActivities, isLoading } = useReports(filter);
 
-  const { user } = useAuth();
-  const { unreadCount } = useNotifications();
-  const { storeName } = useSettingsStore();
-  const router = useRouter();
   const theme = useTheme();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.headerContainer}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text variant="headlineMedium" style={styles.greeting}>
-              {storeName || 'Stock Hub'}
-            </Text>
-            <Text variant="bodyLarge" style={styles.userName}>
-              {user?.fullName || user?.username}
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => router.push('/notifications')}
-              style={styles.notifBtn}
-            >
-              <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
-              {unreadCount > 0 && (
-                <Badge
-                  style={styles.notifBadge}
-                  size={16}
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-            </TouchableOpacity>
-            <View style={styles.avatarContainer}>
-              <Avatar.Text
-                size={40}
-                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                style={{ backgroundColor: theme.colors.primaryContainer }}
-                color={theme.colors.primary}
-              />
-            </View>
-          </View>
-        </View>
-      </View>
+      <MainHeader showStoreName showGreeting />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>

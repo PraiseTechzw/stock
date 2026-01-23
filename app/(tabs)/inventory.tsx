@@ -1,23 +1,18 @@
-import { useAuth } from '@/src/hooks/useAuth';
-import { useNotifications } from '@/src/hooks/useNotifications';
+import { MainHeader } from '@/src/components/ui/MainHeader';
 import { useProducts } from '@/src/hooks/useProducts';
-import { useSettingsStore } from '@/src/store/useSettingsStore';
-import { Alert02Icon, ArrowRight01Icon, Notification03Icon, PackageIcon, PlusSignIcon, Search01Icon, StarIcon } from '@hugeicons/core-free-icons';
+import { Alert02Icon, ArrowRight01Icon, PackageIcon, PlusSignIcon, Search01Icon, StarIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Avatar, Badge, Button, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InventoryScreen() {
     const { products, isLoading, error } = useProducts();
-    const { user } = useAuth();
-    const { unreadCount } = useNotifications();
-    const { storeName } = useSettingsStore();
-    const [searchQuery, setSearchQuery] = useState('');
-    const router = useRouter();
     const theme = useTheme();
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState('');
 
     const filteredProducts = useMemo(() => {
         return products.filter((p) =>
@@ -106,41 +101,8 @@ export default function InventoryScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerRow}>
-                    <View>
-                        <Text variant="headlineMedium" style={styles.greeting}>
-                            {storeName || 'Stock Hub'}
-                        </Text>
-                        <Text variant="bodyLarge" style={styles.userName}>
-                            {user?.fullName || user?.username}
-                        </Text>
-                    </View>
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity
-                            onPress={() => router.push('/notifications')}
-                            style={styles.notifBtn}
-                        >
-                            <HugeiconsIcon icon={Notification03Icon} size={28} color={theme.colors.onSurface} />
-                            {unreadCount > 0 && (
-                                <Badge
-                                    style={styles.notifBadge}
-                                    size={16}
-                                >
-                                    {unreadCount}
-                                </Badge>
-                            )}
-                        </TouchableOpacity>
-                        <View style={styles.avatarContainer}>
-                            <Avatar.Text
-                                size={40}
-                                label={user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                                style={{ backgroundColor: theme.colors.primaryContainer }}
-                                color={theme.colors.primary}
-                            />
-                        </View>
-                    </View>
-                </View>
+            <MainHeader title="Inventory" />
+            <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
                 <Searchbar
                     placeholder="Search inventory..."
                     onChangeText={setSearchQuery}
@@ -201,54 +163,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerContainer: {
-        paddingHorizontal: 20,
-        backgroundColor: 'transparent',
-        paddingBottom: 16,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-        marginTop: 10,
-    },
-    greeting: {
-        fontWeight: '900',
-        letterSpacing: -0.5,
-        color: '#000',
-    },
-    userName: {
-        color: '#64748b',
-        fontWeight: '600',
-        marginTop: -2,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    notifBtn: {
-        position: 'relative',
-        padding: 4,
-    },
-    notifBadge: {
-        position: 'absolute',
-        top: -2,
-        right: -2,
-        fontWeight: 'bold',
-        backgroundColor: '#ef4444',
-    },
-    avatarContainer: {
-        borderRadius: 20,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
     premiumSearch: {
         borderRadius: 16,
         height: 48,
-        backgroundColor: '#f1f5f9',
     },
     searchInput: {
         fontSize: 15,

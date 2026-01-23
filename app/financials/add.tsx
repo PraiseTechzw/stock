@@ -1,11 +1,12 @@
 import { useExpenses } from '@/src/hooks/useExpenses';
-import { Camera01Icon, Delete02Icon, Image01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft02Icon, Camera01Icon, CheckmarkCircle01Icon, Delete02Icon, Image01Icon, Note01Icon, Tag01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Dialog, IconButton, List, Portal, RadioButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Dialog, IconButton, Portal, RadioButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 const EXPENSE_CATEGORIES = [
@@ -73,8 +74,6 @@ export default function AddExpenseScreen() {
                 type: 'success',
                 text1: 'Expense Recorded',
                 text2: `$${form.amount} for ${form.category} was saved.`,
-                position: 'bottom',
-                bottomOffset: 40,
             });
 
             router.back();
@@ -84,8 +83,6 @@ export default function AddExpenseScreen() {
                 type: 'error',
                 text1: 'Save Failed',
                 text2: 'Could not record expense. Please try again.',
-                position: 'bottom',
-                bottomOffset: 40,
             });
         }
     };
@@ -93,129 +90,154 @@ export default function AddExpenseScreen() {
     const isValid = form.amount && !isNaN(parseFloat(form.amount));
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Stack.Screen options={{ title: 'New Expense' }} />
-            <View style={styles.formContainer}>
-
-                <Surface style={[styles.imageContainer, { backgroundColor: theme.colors.surfaceVariant }]} elevation={0}>
-                    {form.receiptImageUri ? (
-                        <>
-                            <Image source={{ uri: form.receiptImageUri }} style={styles.image} />
-                            <IconButton
-                                icon={() => <HugeiconsIcon icon={Delete02Icon} size={20} color="#fff" />}
-                                style={styles.removeImage}
-                                onPress={() => setForm({ ...form, receiptImageUri: '' })}
-                            />
-                        </>
-                    ) : (
-                        <View style={styles.placeholder}>
-                            <HugeiconsIcon icon={Image01Icon} size={48} color={theme.colors.outline} />
-                            <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                                No Receipt Image
-                            </Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerTitleGroup}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={28} color="#000" />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text variant="headlineMedium" style={styles.greeting}>New Expense</Text>
+                            <Text variant="bodyLarge" style={styles.userName}>Log business spending</Text>
                         </View>
-                    )}
-                </Surface>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
-                <View style={styles.imageActions}>
-                    <Button
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+                    <Surface style={[styles.imageContainer, { backgroundColor: theme.colors.surfaceVariant + '40' }]} elevation={0}>
+                        {form.receiptImageUri ? (
+                            <>
+                                <Image source={{ uri: form.receiptImageUri }} style={styles.image} />
+                                <IconButton
+                                    icon={() => <HugeiconsIcon icon={Delete02Icon} size={20} color="#fff" />}
+                                    style={styles.removeImage}
+                                    onPress={() => setForm({ ...form, receiptImageUri: '' })}
+                                />
+                            </>
+                        ) : (
+                            <View style={styles.placeholder}>
+                                <HugeiconsIcon icon={Image01Icon} size={48} color={theme.colors.outlineVariant} />
+                                <Text variant="labelLarge" style={{ color: theme.colors.outline, marginTop: 12, fontWeight: '700' }}>
+                                    No Receipt Attached
+                                </Text>
+                            </View>
+                        )}
+                    </Surface>
+
+                    <View style={styles.imageActions}>
+                        <Button
+                            mode="outlined"
+                            onPress={pickImage}
+                            icon={() => <HugeiconsIcon icon={Image01Icon} size={18} color={theme.colors.primary} />}
+                            style={[styles.actionBtn, { borderColor: theme.colors.primaryContainer }]}
+                            contentStyle={{ height: 48 }}
+                            labelStyle={{ fontWeight: '900' }}
+                        >
+                            Gallery
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={takePhoto}
+                            icon={() => <HugeiconsIcon icon={Camera01Icon} size={18} color="#fff" />}
+                            style={[styles.actionBtn, { backgroundColor: theme.colors.primary }]}
+                            contentStyle={{ height: 48 }}
+                            labelStyle={{ fontWeight: '900' }}
+                        >
+                            Camera
+                        </Button>
+                    </View>
+
+                    <TextInput
+                        label="Amount Spent *"
                         mode="outlined"
-                        onPress={pickImage}
-                        icon={() => <HugeiconsIcon icon={Image01Icon} size={18} color={theme.colors.primary} />}
-                        style={styles.actionBtn}
-                        labelStyle={{ fontSize: 13 }}
+                        value={form.amount}
+                        onChangeText={(text) => setForm({ ...form, amount: text })}
+                        keyboardType="numeric"
+                        style={styles.input}
+                        activeOutlineColor={theme.colors.primary}
+                        outlineStyle={{ borderRadius: 16 }}
+                        left={<TextInput.Affix text="$" textStyle={{ fontWeight: '900', color: theme.colors.primary }} />}
+                        error={form.amount !== '' && isNaN(parseFloat(form.amount))}
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.categoryPicker, { backgroundColor: theme.colors.surface }]}
+                        onPress={() => setCatDialogVisible(true)}
                     >
-                        Gallery
-                    </Button>
+                        <View style={[styles.iconBox, { backgroundColor: theme.colors.primaryContainer + '30' }]}>
+                            <HugeiconsIcon icon={Tag01Icon} size={20} color={theme.colors.primary} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text variant="labelSmall" style={{ color: '#64748b', fontWeight: '900' }}>CATEGORY</Text>
+                            <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{form.category}</Text>
+                        </View>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={20} color={theme.colors.outlineVariant} style={{ transform: [{ rotate: '180deg' }] }} />
+                    </TouchableOpacity>
+
+                    <TextInput
+                        label="Description / Purpose"
+                        mode="outlined"
+                        value={form.description}
+                        onChangeText={(text) => setForm({ ...form, description: text })}
+                        multiline
+                        numberOfLines={3}
+                        style={styles.input}
+                        activeOutlineColor={theme.colors.primary}
+                        outlineStyle={{ borderRadius: 16 }}
+                        left={<TextInput.Icon icon={() => <HugeiconsIcon icon={Note01Icon} size={20} color={theme.colors.outline} />} />}
+                    />
+
                     <Button
                         mode="contained"
-                        onPress={takePhoto}
-                        icon={() => <HugeiconsIcon icon={Camera01Icon} size={18} color="#fff" />}
-                        style={styles.actionBtn}
-                        labelStyle={{ fontSize: 13 }}
+                        onPress={handleSave}
+                        disabled={!isValid}
+                        style={[styles.saveButton, { backgroundColor: isValid ? '#6366f1' : theme.colors.surfaceVariant }]}
+                        contentStyle={{ height: 56 }}
+                        labelStyle={{ fontWeight: '900' }}
+                        icon={() => <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="#fff" />}
                     >
-                        Camera
+                        {isValid ? 'Record Expense' : 'Invalid Amount'}
                     </Button>
-                </View>
 
-                <TextInput
-                    label="Amount *"
-                    mode="outlined"
-                    value={form.amount}
-                    onChangeText={(text) => setForm({ ...form, amount: text })}
-                    keyboardType="numeric"
-                    style={styles.input}
-                    left={<TextInput.Affix text="$" />}
-                    activeOutlineColor={theme.colors.primary}
-                    error={form.amount !== '' && isNaN(parseFloat(form.amount))}
-                />
-
-                <List.Item
-                    title="Expense Category"
-                    titleStyle={{ fontWeight: 'bold' }}
-                    description={form.category}
-                    onPress={() => setCatDialogVisible(true)}
-                    left={props => <List.Icon {...props} icon="tag-outline" color={theme.colors.primary} />}
-                    right={props => <List.Icon {...props} icon="chevron-right" />}
-                    style={[styles.categoryPicker, { backgroundColor: theme.colors.surface }]}
-                />
-
-                <TextInput
-                    label="Description"
-                    mode="outlined"
-                    value={form.description}
-                    onChangeText={(text) => setForm({ ...form, description: text })}
-                    multiline
-                    numberOfLines={3}
-                    style={styles.input}
-                    activeOutlineColor={theme.colors.primary}
-                />
-
-                <Button
-                    mode="contained"
-                    onPress={handleSave}
-                    style={styles.saveButton}
-                    contentStyle={styles.saveButtonContent}
-                    disabled={!isValid}
-                >
-                    {isValid ? 'Record Expense' : 'Enter Valid Amount'}
-                </Button>
-
-                <Portal>
-                    <Dialog
-                        visible={catDialogVisible}
-                        onDismiss={() => setCatDialogVisible(false)}
-                        style={{ borderRadius: 24 }}
-                    >
-                        <Dialog.Title style={{ fontWeight: 'bold' }}>Select Category</Dialog.Title>
-                        <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
-                            <ScrollView>
-                                <RadioButton.Group
-                                    onValueChange={value => {
-                                        setForm({ ...form, category: value });
-                                        setCatDialogVisible(false);
-                                    }}
-                                    value={form.category}
-                                >
-                                    {EXPENSE_CATEGORIES.map(cat => (
-                                        <List.Item
-                                            key={cat}
-                                            title={cat}
-                                            onPress={() => {
-                                                setForm({ ...form, category: cat });
-                                                setCatDialogVisible(false);
-                                            }}
-                                            right={() => <RadioButton value={cat} />}
-                                            style={{ paddingVertical: 4 }}
-                                        />
-                                    ))}
-                                </RadioButton.Group>
-                            </ScrollView>
-                        </Dialog.ScrollArea>
-                    </Dialog>
-                </Portal>
-            </View>
-        </ScrollView>
+                    <Portal>
+                        <Dialog
+                            visible={catDialogVisible}
+                            onDismiss={() => setCatDialogVisible(false)}
+                            style={{ borderRadius: 32, padding: 8 }}
+                        >
+                            <Dialog.Title style={{ fontWeight: '900', textAlign: 'center' }}>Select Category</Dialog.Title>
+                            <Dialog.ScrollArea style={{ paddingHorizontal: 0, maxHeight: 400 }}>
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    <RadioButton.Group
+                                        onValueChange={value => {
+                                            setForm({ ...form, category: value });
+                                            setCatDialogVisible(false);
+                                        }}
+                                        value={form.category}
+                                    >
+                                        {EXPENSE_CATEGORIES.map(cat => (
+                                            <TouchableOpacity
+                                                key={cat}
+                                                style={styles.catItem}
+                                                onPress={() => {
+                                                    setForm({ ...form, category: cat });
+                                                    setCatDialogVisible(false);
+                                                }}
+                                            >
+                                                <Text variant="titleMedium" style={{ fontWeight: form.category === cat ? '900' : '600', color: form.category === cat ? theme.colors.primary : '#1e293b' }}>{cat}</Text>
+                                                <RadioButton value={cat} />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </RadioButton.Group>
+                                </ScrollView>
+                            </Dialog.ScrollArea>
+                        </Dialog>
+                    </Portal>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -223,16 +245,41 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    formContainer: {
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    greeting: {
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        color: '#000',
+    },
+    userName: {
+        color: '#64748b',
+        fontWeight: '600',
+        marginTop: -2,
+    },
+    scrollContent: {
         padding: 20,
-        paddingBottom: 40,
     },
     imageContainer: {
         width: '100%',
-        height: 180,
-        borderRadius: 24,
+        height: 200,
+        borderRadius: 28,
         overflow: 'hidden',
         marginBottom: 16,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     image: {
         width: '100%',
@@ -242,15 +289,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderRadius: 24,
-        borderStyle: 'dashed',
-        borderColor: 'rgba(0,0,0,0.1)',
     },
     removeImage: {
         position: 'absolute',
-        top: 8,
-        right: 8,
+        top: 12,
+        right: 12,
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     imageActions: {
@@ -260,25 +303,37 @@ const styles = StyleSheet.create({
     },
     actionBtn: {
         flex: 1,
-        borderRadius: 14,
+        borderRadius: 16,
     },
     input: {
         marginBottom: 16,
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
     },
     categoryPicker: {
-        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 20,
         marginBottom: 16,
-        elevation: 1,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
     },
+    iconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     saveButton: {
         marginTop: 16,
-        borderRadius: 16,
-        elevation: 4,
+        borderRadius: 18,
     },
-    saveButtonContent: {
-        height: 56,
-    },
+    catItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+    }
 });
