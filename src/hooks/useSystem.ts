@@ -2,14 +2,14 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { Alert, Platform } from 'react-native';
+import { Alert, NativeModules, Platform } from 'react-native';
 import { db } from '../db/DatabaseProvider';
 import {
+    categories,
     customers,
     expenses,
     notifications,
     payments,
-    productCategories,
     products,
     salesOrderItems,
     salesOrders,
@@ -20,6 +20,23 @@ import {
 
 export const useSystem = () => {
     const router = useRouter();
+
+    const reloadApp = async () => {
+        try {
+            await Updates.reloadAsync();
+        } catch (error) {
+            console.warn('Updates.reloadAsync failed, trying DevSettings...', error);
+            try {
+                if (__DEV__ && NativeModules.DevSettings) {
+                    NativeModules.DevSettings.reload();
+                } else {
+                    Alert.alert('Restart Required', 'Please restart the app to apply changes.');
+                }
+            } catch (e) {
+                Alert.alert('Restart Required', 'Please restart the app to apply changes.');
+            }
+        }
+    };
 
     const factoryReset = async () => {
         try {
@@ -36,7 +53,7 @@ export const useSystem = () => {
                 await tx.delete(expenses);
                 await tx.delete(customers);
                 await tx.delete(notifications);
-                await tx.delete(productCategories);
+                await tx.delete(categories);
                 await tx.delete(stockLocations);
                 await tx.delete(users);
             });
@@ -44,7 +61,7 @@ export const useSystem = () => {
             Alert.alert(
                 'System Reset',
                 'All data has been cleared. The app will now restart to re-seed default settings.',
-                [{ text: 'OK', onPress: () => Updates.reloadAsync() }]
+                [{ text: 'OK', onPress: reloadApp }]
             );
             return true;
         } catch (error) {
@@ -71,7 +88,7 @@ export const useSystem = () => {
             const pickedFile = result.assets[0];
 
             // Expo SQLite database location on Android/iOS
-            const dbFolder = `${FileSystem.documentDirectory}SQLite/`;
+            const dbFolder = `${(FileSystem as any).documentDirectory}SQLite/`;
             const dbPath = `${dbFolder}stock.db`;
 
             // Ensure the directory exists
@@ -89,7 +106,7 @@ export const useSystem = () => {
             Alert.alert(
                 'Import Successful',
                 'Business workspace has been restored. The application will restart to load the new data.',
-                [{ text: 'Restart Now', onPress: () => Updates.reloadAsync() }]
+                [{ text: 'Restart Now', onPress: reloadApp }]
             );
             return true;
         } catch (error) {

@@ -5,6 +5,8 @@ import { useAuth } from '@/src/hooks/useAuth';
 import { useSystem } from '@/src/hooks/useSystem';
 import {
     CircleLock02FreeIcons,
+    CloudIcon,
+    LeftToRightListDashIcon,
     UserIcon,
     ViewIcon,
     ViewOffIcon
@@ -16,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -74,11 +77,14 @@ export default function LoginScreen() {
                         [
                             { text: "Cancel", onPress: resetFlow, style: 'cancel' },
                             {
-                                text: "Restore Data", onPress: () => {
-                                    // In a real app, this would download the DB.
-                                    // For now, we'll just simulate a successful restore.
-                                    setStep('password');
-                                    setFoundUser({ username, fullName: "Cloud User", role: 'admin' });
+                                text: "Restore Data",
+                                onPress: async () => {
+                                    // Trigger the real import flow
+                                    const success = await importDatabase();
+                                    if (!success) {
+                                        resetFlow();
+                                    }
+                                    // If success, importDatabase handles the reload.
                                 }
                             }
                         ]
