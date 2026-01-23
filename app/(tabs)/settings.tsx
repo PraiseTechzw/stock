@@ -1,6 +1,7 @@
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useExport } from '@/src/hooks/useExport';
+import { useSystem } from '@/src/hooks/useSystem';
 import { useSettingsStore } from '@/src/store/useSettingsStore';
 import {
     ComputerIcon,
@@ -19,7 +20,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Avatar, Dialog, Divider, List, Button as PaperButton, TextInput as PaperTextInput, Portal, Switch, Text, useTheme } from 'react-native-paper';
 
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
     const { user, logout } = useAuth();
     const { exportProducts, exportSales } = useExport();
     const { themeMode, setThemeMode, notificationsEnabled, setNotificationsEnabled, storeName, setStoreName, businessAddress, setBusinessAddress } = useSettingsStore();
+    const { factoryReset } = useSystem();
     const router = useRouter();
     const theme = useTheme();
     const [exporting, setExporting] = useState(false);
@@ -223,7 +225,7 @@ export default function SettingsScreen() {
                                     'This will wipe ALL sales, customers, and inventory data. This cannot be undone.',
                                     [
                                         { text: 'Cancel', style: 'cancel' },
-                                        { text: 'RESET EVERYTHING', style: 'destructive', onPress: () => Alert.alert('Simulated', 'Data reset would happen here.') }
+                                        { text: 'RESET EVERYTHING', style: 'destructive', onPress: factoryReset }
                                     ]
                                 )}
                                 titleStyle={{ color: theme.colors.error }}
