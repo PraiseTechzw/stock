@@ -1,6 +1,8 @@
 import { useCustomers } from '@/src/hooks/useCustomers';
+import { useNotifications } from '@/src/hooks/useNotifications';
 import { useProducts } from '@/src/hooks/useProducts';
 import { SaleItem, useSales } from '@/src/hooks/useSales';
+import { useStock } from '@/src/hooks/useStock';
 import {
     Calendar02Icon,
     CheckmarkCircle01Icon,
@@ -12,16 +14,21 @@ import {
     UserIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
+import * as Print from 'expo-print';
 import { Stack, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, Card, Divider, List, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import * as Sharing from 'expo-sharing';
+import { useMemo, useState } from 'react';
+import { Alert, FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Card, Dialog, Divider, List, Portal, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import Animated, { ScaleIn } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 
 export default function QuickSaleScreen() {
     const { createSalesOrder } = useSales();
     const { customers } = useCustomers();
     const { products } = useProducts();
+    const { addNotification } = useNotifications();
+    const { getStockForProduct } = useStock();
     const router = useRouter();
     const theme = useTheme();
 
@@ -31,6 +38,8 @@ export default function QuickSaleScreen() {
     const [productSearch, setProductSearch] = useState('');
     const [paymentStatus, setPaymentStatus] = useState<'paid' | 'credit'>('paid');
     const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [successVisible, setSuccessVisible] = useState(false);
+    const [lastOrderId, setLastOrderId] = useState<number | null>(null);
 
     const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
 
@@ -93,7 +102,7 @@ export default function QuickSaleScreen() {
     const handleConfirmSale = async () => {
         if (cart.length === 0) return;
         try {
-            await createSalesOrder(
+            const order = await createSalesOrder(
                 selectedCustomerId,
                 cart,
                 0,
@@ -101,15 +110,27 @@ export default function QuickSaleScreen() {
                 paymentStatus === 'credit' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined
             );
 
-            Toast.show({
-                type: 'success',
-                text1: 'Sale Confirmed',
-                text2: paymentStatus === 'credit' ? 'Credit recorded (IOU)' : 'Transaction recorded successfully.',
-                position: 'bottom',
-                bottomOffset: 40,
-            });
+            setLastOrderId(order.id);
 
-            router.replace('/(tabs)/sales');
+            // 1. Automated Low Stock Check & Notification
+            for (const item of cart) {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    // Note: In a real app, we'd query the fresh stock level from DB after the sale
+                    // but for immediate feedback we can estimate or use a hook.
+                    // Here we'll just check if the product's minStockLevel is relevant.
+                    if (product.minStockLevel && product.totalQuantity - item.quantity < product.minStockLevel) {
+                        await addNotification(
+                            'Low Stock Alert',
+                            `${product.name} is running low (${product.totalQuantity - item.quantity} remaining).`,
+                            'low_stock',
+                            { productId: product.id }
+                        );
+                    }
+                }
+            }
+
+            setSuccessVisible(true);
         } catch (error) {
             console.error(error);
             Toast.show({
@@ -119,6 +140,18 @@ export default function QuickSaleScreen() {
                 position: 'bottom',
                 bottomOffset: 40,
             });
+        }
+    };
+
+    const handleShareReceipt = async () => {
+        if (!lastOrderId) return;
+        try {
+            // Reusing a simplified version of the invoice HTML
+            const html = `<html><body><h1>Receipt #${lastOrderId}</h1><p>Total: $${cartTotal.toFixed(2)}</p></body></html>`;
+            const { uri } = await Print.printToFileAsync({ html });
+            await Sharing.shareAsync(uri);
+        } catch (e) {
+            Alert.alert('Error', 'Failed to generate receipt');
         }
     };
 
@@ -355,6 +388,49 @@ export default function QuickSaleScreen() {
                     </View>
                 </ScrollView>
             )}
+
+            <Portal>
+                <Dialog visible={successVisible} dismissable={false} style={{ borderRadius: 32, alignItems: 'center', paddingVertical: 20 }}>
+                    <Animated.View entering={ScaleIn.duration(600)}>
+                        <Surface style={[styles.successIcon, { backgroundColor: '#10b981' }]} elevation={4}>
+                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={48} color="#fff" />
+                        </Surface>
+                    </Animated.View>
+
+                    <Text variant="headlineMedium" style={{ fontWeight: '900', marginTop: 20 }}>Sale Confirmed!</Text>
+                    <Text variant="bodyMedium" style={{ opacity: 0.6, textAlign: 'center', marginTop: 8, paddingHorizontal: 20 }}>
+                        Transaction #${lastOrderId} has been recorded.
+                    </Text>
+
+                    <View style={styles.successActions}>
+                        <Button
+                            mode="contained"
+                            onPress={handleShareReceipt}
+                            style={styles.successBtn}
+                            icon="share"
+                        >
+                            Share Receipt
+                        </Button>
+                        <Button
+                            mode="outlined"
+                            onPress={() => {
+                                setSuccessVisible(false);
+                                setCart([]);
+                                setStep(1);
+                            }}
+                            style={[styles.successBtn, { borderColor: theme.colors.primary }]}
+                        >
+                            New Sale
+                        </Button>
+                        <Button
+                            mode="text"
+                            onPress={() => router.replace('/(tabs)/sales')}
+                        >
+                            Go to Sales History
+                        </Button>
+                    </View>
+                </Dialog>
+            </Portal>
         </View>
     );
 }
@@ -626,5 +702,23 @@ const styles = StyleSheet.create({
         flex: 2,
         borderRadius: 16,
         backgroundColor: '#6366f1',
+    },
+    successIcon: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    successActions: {
+        width: '100%',
+        paddingHorizontal: 20,
+        marginTop: 32,
+        gap: 12,
+    },
+    successBtn: {
+        borderRadius: 16,
+        height: 48,
+        justifyContent: 'center',
     },
 });

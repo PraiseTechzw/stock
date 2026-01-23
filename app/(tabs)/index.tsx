@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Avatar, Badge, Button, Divider, List, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 
 import { Can } from '@/src/components/auth/Can';
+import { AIInsights } from '@/src/components/ui/AIInsights';
 import { AlertSection } from '@/src/components/ui/AlertSection';
 import { MetricCard } from '@/src/components/ui/MetricCard';
 import { SalesChart } from '@/src/components/ui/SalesChart';
@@ -112,6 +113,7 @@ export default function DashboardScreen() {
             title="Sales Performance"
             data={salesByCategory}
           />
+          <AIInsights metrics={metrics} />
         </Can>
 
         {metrics && metrics.lowStockCount > 0 && (

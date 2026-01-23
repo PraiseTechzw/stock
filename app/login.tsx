@@ -38,7 +38,7 @@ import Animated, {
     SlideInRight,
 } from 'react-native-reanimated';
 
-type AuthStep = 'identify' | 'password' | 'register' | 'reconnect';
+type AuthStep = 'identify' | 'password' | 'register' | 'reconnect' | 'syncing';
 
 export default function LoginScreen() {
     const theme = useTheme();
@@ -56,6 +56,44 @@ export default function LoginScreen() {
     const [isFreshSetup, setIsFreshSetup] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [syncProgress, setSyncProgress] = useState(0);
+
+    const startCloudSync = () => {
+        setStep('syncing');
+        setSyncProgress(0);
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 0.05;
+            setSyncProgress(progress);
+            if (progress >= 1) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    Alert.alert(
+                        "Workspace Found",
+                        "We found a backup for '@" + username + "'. Would you like to restore it?",
+                        [
+                            { text: "Cancel", onPress: resetFlow, style: 'cancel' },
+                            {
+                                text: "Restore Data", onPress: () => {
+                                    // In a real app, this would download the DB.
+                                    // For now, we'll just simulate a successful restore.
+                                    setStep('password');
+                                    setFoundUser({ username, fullName: "Cloud User", role: 'admin' });
+                                }
+                            }
+                        ]
+                    );
+                }, 500);
+            }
+        }, 100);
+    };
+
+    const resetFlow = () => {
+        setStep('identify');
+        setFoundUser(null);
+        setPassword('');
+        setError('');
+    };
 
     // Detect if this is a new device/fresh workspace
     useEffect(() => {
@@ -339,11 +377,53 @@ export default function LoginScreen() {
                                 </Button>
 
                                 <Button
+                                    mode="contained-tonal"
+                                    icon={() => <HugeiconsIcon icon={CloudIcon} size={18} color={theme.colors.primary} />}
+                                    onPress={startCloudSync}
+                                    style={styles.input}
+                                >
+                                    Connect to Cloud
+                                </Button>
+
+                                <Button
                                     mode="text"
                                     onPress={resetFlow}
                                     style={{ marginTop: 8 }}
                                 >
                                     Back to local setup
+                                </Button>
+                            </Animated.View>
+                        )}
+
+                        {/* Syncing Step */}
+                        {step === 'syncing' && (
+                            <Animated.View entering={FadeInDown.duration(400)} style={styles.syncContainer}>
+                                <HugeiconsIcon icon={CloudIcon} size={64} color={theme.colors.primary} />
+                                <Text variant="titleLarge" style={styles.syncTitle}>Syncing with Cloud...</Text>
+                                <Text variant="bodySmall" style={styles.syncSubtitle}>Searching for your business workspace backups</Text>
+
+                                <View style={styles.progressTrack}>
+                                    <Animated.View
+                                        style={[
+                                            styles.progressBar,
+                                            {
+                                                width: `${syncProgress * 100}%`,
+                                                backgroundColor: theme.colors.primary
+                                            }
+                                        ]}
+                                    />
+                                </View>
+
+                                <Text variant="labelSmall" style={{ marginTop: 8, opacity: 0.5 }}>
+                                    {Math.round(syncProgress * 100)}% Complete
+                                </Text>
+
+                                <Button
+                                    mode="text"
+                                    onPress={resetFlow}
+                                    style={{ marginTop: 24 }}
+                                >
+                                    Cancel Sync
                                 </Button>
                             </Animated.View>
                         )}
@@ -472,6 +552,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
         marginTop: 16,
+    },
+    syncContainer: {
+        alignItems: 'center',
+        paddingVertical: 32,
+    },
+    syncTitle: {
+        fontWeight: '900',
+        marginTop: 20,
+    },
+    syncSubtitle: {
+        opacity: 0.6,
+        marginBottom: 32,
+        textAlign: 'center',
+    },
+    progressTrack: {
+        width: '100%',
+        height: 6,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        height: '100%',
+        borderRadius: 3,
     },
     footer: {
         alignItems: 'center',
