@@ -1,34 +1,33 @@
 {
   "expo": {
-    "name": "stock",
+    "name": "PraiseTech Stock Hub",
     "slug": "stock",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "stock",
+    "scheme": "stockhub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6366f1"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.camusmarketzw.stock"
+      "bundleIdentifier": "com.camusmarketzw.stockhub"
     },
     "android": {
-      "package": "com.camusmarketzw.stock",
+      "package": "com.praisetechzw.stockhub",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6366f1"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
